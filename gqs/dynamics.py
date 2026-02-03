@@ -15,7 +15,7 @@ from __future__ import annotations
 import numpy as np
 from scipy.linalg import expm
 
-from .operators import sy, sz
+from .operators import sy, sz, Spin
 
 def Hamiltonian_QK(tau, kappa, nqubit, s_y=sy, s_z=sz):
     """
