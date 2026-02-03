@@ -13,6 +13,7 @@ Modules are split for clarity and easier reuse.
 from __future__ import annotations
 
 import numpy as np
+from scipy.linalg import sqrtm
 try:
     import ot  # POT (Python Optimal Transport)
 except ImportError as e:
@@ -67,3 +68,60 @@ def Quantum_EMD(chi_1, lambda_1, chi_2, lambda_2, eps=1e-12):
 
     # Wasserstein distance
     return ot.emd2(lambda_1, lambda_2, M)
+
+def bures_distance(rho, sigma, *, check=True, eps=1e-12):
+    """
+    Compute the Bures distance between two density matrices rho and sigma.
+
+    D_B(rho, sigma) = sqrt( 2 * (1 - sqrt(F)) )
+    where F is the Uhlmann fidelity:
+        F(rho, sigma) = (Tr(sqrt( sqrt(rho) sigma sqrt(rho) )))^2
+
+    Parameters
+    ----------
+    rho, sigma : (d, d) array_like (complex)
+        Density matrices (Hermitian, PSD, trace ~ 1).
+    check : bool
+        If True, run basic sanity checks.
+    eps : float
+        Numerical tolerance for Hermiticity/trace checks and clipping.
+
+    Returns
+    -------
+    float
+        Bures distance in [0, sqrt(2)].
+    """
+    rho = np.asarray(rho, dtype=complex)
+    sigma = np.asarray(sigma, dtype=complex)
+
+    if rho.shape != sigma.shape or rho.ndim != 2 or rho.shape[0] != rho.shape[1]:
+        raise ValueError("rho and sigma must be square matrices of the same shape.")
+
+    if check:
+        # Hermiticity
+        if not (np.allclose(rho, rho.conj().T, atol=1e-10) and np.allclose(sigma, sigma.conj().T, atol=1e-10)):
+            raise ValueError("rho and sigma must be Hermitian.")
+        # Trace ~ 1
+        if not (abs(np.trace(rho) - 1) < 1e-8 and abs(np.trace(sigma) - 1) < 1e-8):
+            raise ValueError("rho and sigma should have trace 1 (within tolerance).")
+
+    # sqrt(rho)
+    sqrt_rho = sqrtm(rho)
+
+    # A = sqrt(rho) sigma sqrt(rho)
+    A = sqrt_rho @ sigma @ sqrt_rho
+
+    # sqrt(A)
+    sqrt_A = sqrtm(A)
+
+    # fidelity amplitude = Tr(sqrt(A)) should be real for valid density matrices,
+    # but due to numerics may have tiny imaginary part
+    tr = np.trace(sqrt_A)
+    tr_real = float(np.real_if_close(tr, tol=1000).real)
+
+    # Fidelity F = (Tr(sqrt(A)))^2, clamp to [0,1]
+    F = tr_real * tr_real
+    F = min(1.0, max(0.0, F))
+
+    # Bures distance
+    return float(np.sqrt(max(0.0, 2.0 * (1.0 - np.sqrt(F)))))
