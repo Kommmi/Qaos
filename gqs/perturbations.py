@@ -13,6 +13,7 @@ Modules are split for clarity and easier reuse.
 from __future__ import annotations
 
 import numpy as np
+from .states import Initial_state
 
 def wrap_phi(phi):
     """Wrap to (-pi, pi]."""
