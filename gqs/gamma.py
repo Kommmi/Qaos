@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 from .states import Initial_state, Reduced_state_single_site
 from .dynamics import Hamiltonian_QK, floquet_operator_from_H
-from .distances import Quantum_EMD
+from .distances import Quantum_EMD, Psi_Dist
 from .perturbations import perturb_theta_phi_isotropic
 
 def LLE_single_its_Quantum_Kicked_Top(U,Psi_0,Psi_p,d_hilbert,n_chain,system_site,N_kicks,renormalize=False):
