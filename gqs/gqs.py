@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import numpy as np
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 (needed for 3D projection)
 
@@ -351,3 +352,134 @@ def GQS_Bloch_Sphere_two_chi(chi_S1, qz1, chi_S2, qz2, fname='none',
 
     plt.show()
     return
+
+def GQS_Bloch_Sphere_chi_plotly(
+    chi_S, qz,
+    fname='none',                 # if not 'none', write HTML (and optionally PNG)
+    title=None,
+    sphere_res=80,
+    marker_size=5,
+    opacity_sphere=0.25,
+    colorscale="Viridis",
+    show=True,
+    write_png=False               # requires: pip install -U kaleido
+):
+    """
+    Plot conditional single-qubit states |chi_a> on the Bloch sphere using Plotly,
+    colored by their associated probabilities qz = lambda_E[a].
+
+    Parameters
+    ----------
+    chi_S : array-like, shape (N, 2), complex
+        Conditional pure states |chi_a>.
+    qz : array-like, shape (N,)
+        Associated probabilities lambda_E[a].
+    fname : str
+        If not 'none', saves an interactive HTML file: f"{fname}.html".
+        If write_png=True, also saves a static PNG: f"{fname}.png".
+    title : str or None
+        Plot title.
+    sphere_res : int
+        Resolution of the sphere mesh.
+    marker_size : int/float
+        Scatter marker size.
+    opacity_sphere : float
+        Sphere transparency.
+    colorscale : str
+        Plotly colorscale name.
+    show : bool
+        If True, displays the figure.
+    write_png : bool
+        If True, also writes PNG via kaleido.
+    """
+    chi_S = np.asarray(chi_S)
+    qz = np.asarray(qz)
+
+    if chi_S.ndim != 2 or chi_S.shape[1] != 2:
+        raise ValueError("chi_S must have shape (N, 2).")
+    if chi_S.shape[0] != qz.size:
+        raise ValueError("chi_S and qz must have the same length")
+
+    # Apply your existing masking/renormalization
+    chi_S, qz = _mask_chi_lambda(chi_S, qz, renormalize=True)
+
+    # Bloch coordinates (your existing function)
+    sx, sy, sz = bloch_from_chi(chi_S)
+
+    # Aggregate identical points (your existing function)
+    sx, sy, sz, qz = aggregate_bloch(sx, sy, sz, qz)
+
+    # --- Sphere mesh ---
+    r = 1.0
+    phi = np.linspace(0.0, np.pi, sphere_res)
+    theta = np.linspace(0.0, 2.0*np.pi, sphere_res)
+    PHI, THETA = np.meshgrid(phi, theta)
+
+    x = r * np.sin(PHI) * np.cos(THETA)
+    y = r * np.sin(PHI) * np.sin(THETA)
+    z = r * np.cos(PHI)
+
+    sphere = go.Surface(
+        x=x, y=y, z=z,
+        opacity=opacity_sphere,
+        showscale=False,
+        colorscale=[[0, "whitesmoke"], [1, "whitesmoke"]],
+        hoverinfo="skip"
+    )
+
+    # --- Points ---
+    pts = go.Scatter3d(
+        x=sx, y=sy, z=sz,
+        mode="markers",
+        marker=dict(
+            size=marker_size,
+            color=qz,
+            cmin=0.0,
+            cmax=1.0,
+            colorscale=colorscale,
+            opacity=1.0,
+            colorbar=dict(
+                title=dict(text="λ_E", side="right"),
+                len=0.6,
+                thickness=16,
+            )
+        ),
+        name="|χ⟩",
+        hovertemplate=(
+            "x=%{x:.3f}<br>y=%{y:.3f}<br>z=%{z:.3f}"
+            "<br>λ_E=%{marker.color:.4f}<extra></extra>"
+        )
+    )
+
+    # Labels for |0>, |1>
+    # (Plotly uses annotations in scene; we place them slightly outside the sphere)
+    annotations = [
+        dict(x=-0.1, y=0.0, z= 1.25, text="|0⟩", showarrow=False, font=dict(size=16)),
+        dict(x=-0.1, y=0.0, z=-1.25, text="|1⟩", showarrow=False, font=dict(size=16)),
+    ]
+
+    fig = go.Figure(data=[sphere, pts])
+
+    fig.update_layout(
+        title=title if title is not None else "",
+        margin=dict(l=0, r=0, t=40, b=0),
+        scene=dict(
+            annotations=annotations,
+            xaxis=dict(title="x", range=[-1, 1], tickvals=[-1, 0, 1], zeroline=False),
+            yaxis=dict(title="y", range=[-1, 1], tickvals=[-1, 0, 1], zeroline=False),
+            zaxis=dict(title="z", range=[-1, 1], tickvals=[-1, 0, 1], zeroline=False),
+            aspectmode="cube",
+        ),
+        showlegend=False
+    )
+
+    # Optional: write outputs
+    if fname != "none":
+        fig.write_html(f"{fname}.html")
+        if write_png:
+            fig.write_image(f"{fname}.png", scale=2)
+
+    if show:
+        fig.show()
+
+    return fig
