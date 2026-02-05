@@ -193,13 +193,9 @@ def directional_asymmetry(x, period):
     denom = r_plus + r_minus
     if denom == 0:
         return 0.0
-    return (r_plus - r_minus) / denom
+    return (r_plus - r_minus) / denom , r_plus, r_minus
 
-def period_statistics_summary(
-    x,
-    min_period=10,
-    max_period=100
-):
+def period_statistics_summary(x, min_period=10, max_period=100):
     """
     Compute period-based statistics and return a pandas DataFrame summary.
 
@@ -232,21 +228,29 @@ def period_statistics_summary(
     # --- Period-based quantities ---
     avg_T, per_period_avgs = average_per_period(x, period)
     var_T, vars_per_period = period_averaged_variance(x, period)
-    asymmetry = directional_asymmetry(x, period)
+    asymmetry,rPlus,rMinus = directional_asymmetry(x, period)
 
     # --- Assemble DataFrame ---
     data = [
         {
-            "quantity": "dominant period",
+            "quantity": "dominant_period",
             "value": period
         },
         {
-            "quantity": "average per period",
+            "quantity": "average_per_period",
             "value": avg_T
         },
         {
             "quantity": "variance_per_period",
             "value": var_T
+        },
+        {
+            "quantity": "average_growth_per_period",
+            "value": rPlus
+        },
+        {
+            "quantity": "average_relaxation_per_period",
+            "value": rMinus
         },
         {
             "quantity": "directional_asymmetry",
