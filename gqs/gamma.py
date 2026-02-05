@@ -15,10 +15,97 @@ from __future__ import annotations
 import numpy as np
 from tqdm import tqdm
 
-from .states import Initial_state, Reduced_state_single_site
+from .states import Initial_state, Reduced_state_single_site, rho_single_spin
 from .dynamics import Hamiltonian_QK, floquet_operator_from_H
-from .distances import Quantum_EMD, Psi_Dist
+from .distances import Quantum_EMD, Psi_Dist, bures_distance
 from .perturbations import perturb_theta_phi_isotropic
+
+def Compare_distances_QKT(U,Psi_0,Psi_p,d_hilbert,n_chain,system_site,N_kicks,renormalize=False,show_plt=False):
+    """returns the Earth Mover's Distance between perturbed and unperturbed distribution
+         as a function of time for a single iteration
+
+    Parameters  
+    ----------
+    Evolution_rule : function
+        map function
+    params : array
+        parameters of the map function
+    x0s : array
+        samples from the original distribution
+    xNs : array
+        samples from the perturbed distribution
+    nbins : int
+        number of bins for the histogram
+    traj_len : int
+        number of iterations
+    shw_plt : bool
+        show the plot of EMD vs time
+    
+
+    Returns
+    -------
+    D_t : array
+        Earth Mover's Distance between the two distributions as a function of time
+    x0s : array
+        samples from the original distribution after some iterations
+    xNs : array
+        samples from the perturbed distribution
+    """
+    D_global = np.zeros(N_kicks)
+    D_local = np.zeros(N_kicks)
+    D_local_rho = np.zeros(N_kicks)
+    # 1. Compute the Fubini-Study distance between the two global states Psi_0 and Psi_p
+    Dg0 = Psi_Dist(Psi_0, Psi_p)
+
+    # 2. Compute the Geometric Quantum States of the two global states Psi_0 and Psi_p
+    chi_s0,lambda_e0 = Reduced_state_single_site(d_hilbert,n_chain,system_site,Psi_SE=Psi_0)
+    chi_sp,lambda_ep = Reduced_state_single_site(d_hilbert,n_chain,system_site,Psi_SE=Psi_p)
+
+    # 3.Compute the density matrices of the two GQS
+    rho_s0 = rho_single_spin(d_hilbert, n_chain, system_site, Psi_0)
+    rho_sp = rho_single_spin(d_hilbert, n_chain, system_site, Psi_p)
+
+    # 4. Compute the Quantum EMD between the two GQS
+    Dl0 = Quantum_EMD(chi_s0,lambda_e0,chi_sp,lambda_ep)
+    Dr0 = bures_distance(rho_s0, rho_sp)
+
+    # 5. Evolve the two states for N_kicks
+    for i in range(N_kicks):
+        # 6. Compute the Fubini-Study distance between the two global states Psi_0 and Psi_p
+        D_global[i] = Psi_Dist(Psi_0, Psi_p) / Dg0
+        # 7. Compute the Geometric Quantum States of the two global states Psi_0 and Psi_p
+        chi_s0,lambda_e0 = Reduced_state_single_site(d_hilbert,n_chain,system_site,Psi_SE=Psi_0)
+        chi_sp,lambda_ep = Reduced_state_single_site(d_hilbert,n_chain,system_site,Psi_SE=Psi_p)
+        # 8. Compute the Quantum EMD between the two GQS
+        D_local[i] = Quantum_EMD(chi_s0,lambda_e0,chi_sp,lambda_ep) / Dl0
+        # 9. Compute the density matrices of the two GQS
+        rho_s0 = rho_single_spin(d_hilbert, n_chain, system_site, Psi_0)
+        rho_sp = rho_single_spin(d_hilbert, n_chain, system_site, Psi_p)
+        # 10. Compute the Bures distance between the two density matrices
+        D_local_rho[i] = bures_distance(rho_s0, rho_sp) / Dr0
+        # 11. Evolve the two states
+        Psi_0 = U @ Psi_0
+        Psi_p = U @ Psi_p
+        if renormalize:
+            Psi_0 = Psi_0 / np.linalg.norm(Psi_0)
+            Psi_p = Psi_p / np.linalg.norm(Psi_p)
+    
+    if show_plt:
+        plt.figure(figsize=(10,3))
+        ml1, _, _ = plt.stem(range(N_kicks), D_global-1,linefmt='C0-',markerfmt='C0o',basefmt=' ',label='Global State Distance')
+        ml1.set_markersize(2)
+        ml2, _, _ = plt.stem(range(N_kicks), D_local-1,linefmt='C1-',markerfmt='C1^',basefmt=' ',label='Quantum EMD')
+        ml2.set_markersize(2)
+        ml3, _, _ = plt.stem(range(N_kicks), D_local_rho-1,linefmt='C2-',markerfmt='C2s',basefmt=' ',label='Bures Distance')
+        ml3.set_markersize(2)
+        plt.xlabel('n - Number of Floquet Kicks',fontsize=14)
+        plt.ylabel(r'$\frac{d(n)}{d(0)} - 1$',fontsize=14)
+        plt.title('Comparison of Global and Local Distances over Time',fontsize=16)
+        plt.legend(fontsize=12)
+        plt.grid(alpha=0.3)
+        plt.tight_layout()
+        plt.show()
+    return D_global,D_local,D_local_rho
 
 def LLE_single_its_Quantum_Kicked_Top(U,Psi_0,Psi_p,d_hilbert,n_chain,system_site,N_kicks,renormalize=False):
     """returns the Earth Mover's Distance between perturbed and unperturbed distribution
@@ -317,10 +404,6 @@ def Single_its_QKT(U,Psi_0,Psi_p,d_hilbert,n_chain,system_site,N_kicks,renormali
     -------
     D_t : array
         Earth Mover's Distance between the two distributions as a function of time
-    x0s : array
-        samples from the original distribution after some iterations
-    xNs : array
-        samples from the perturbed distribution
     """
     D_global = np.zeros(N_kicks)
     D_local_GQS = np.zeros(N_kicks)
