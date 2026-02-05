@@ -290,3 +290,133 @@ def Gamma_phase_space_map(
     if return_arrays:
         return Gamma_map, ln_avg_dist_L_map, data
     return data
+
+def Single_its_QKT(U,Psi_0,Psi_p,d_hilbert,n_chain,system_site,N_kicks,renormalize=False):
+    """returns the Earth Mover's Distance between perturbed and unperturbed distribution
+         as a function of time for a single iteration
+
+    Parameters  
+    ----------
+    Evolution_rule : function
+        map function
+    params : array
+        parameters of the map function
+    x0s : array
+        samples from the original distribution
+    xNs : array
+        samples from the perturbed distribution
+    nbins : int
+        number of bins for the histogram
+    traj_len : int
+        number of iterations
+    shw_plt : bool
+        show the plot of EMD vs time
+    
+
+    Returns
+    -------
+    D_t : array
+        Earth Mover's Distance between the two distributions as a function of time
+    x0s : array
+        samples from the original distribution after some iterations
+    xNs : array
+        samples from the perturbed distribution
+    """
+    D_global = np.zeros(N_kicks)
+    D_local_GQS = np.zeros(N_kicks)
+    D_local_rho = np.zeros(N_kicks)
+
+    # 1. Compute the Fubini-Study distance between the two global states Psi_0 and Psi_p
+    Dg0 = Psi_Dist(Psi_0, Psi_p)
+
+    # 2a. Compute the Geometric Quantum States of the two global states Psi_0 and Psi_p
+    chi_s0,lambda_e0 = Reduced_state_single_site(d_hilbert,n_chain,system_site,Psi_SE=Psi_0)
+    chi_sp,lambda_ep = Reduced_state_single_site(d_hilbert,n_chain,system_site,Psi_SE=Psi_p)
+    # 2b. Compute the density matrices of the two GQS
+    rho_s0 = rho_single_spin(d_hilbert, n_chain, system_site, Psi_0)
+    rho_sp = rho_single_spin(d_hilbert, n_chain, system_site, Psi_p)
+
+    # 3. Compute the Quantum EMD between the two GQS
+    Dl0 = Quantum_EMD(chi_s0,lambda_e0,chi_sp,lambda_ep)
+    Dr0 = bures_distance(rho_s0, rho_sp)
+
+    #4.Evolve the two states for N_kicks
+    for i in range(N_kicks):
+        # 5. Compute the Fubini-Study distance between the two global states Psi_0 and Psi_p
+        D_global[i] = Psi_Dist(Psi_0, Psi_p) / Dg0
+        # 6a. Compute the Geometric Quantum States of the two global states Psi_0 and Psi_p
+        chi_s0,lambda_e0 = Reduced_state_single_site(d_hilbert,n_chain,system_site,Psi_SE=Psi_0)
+        chi_sp,lambda_ep = Reduced_state_single_site(d_hilbert,n_chain,system_site,Psi_SE=Psi_p)
+        # 6b. Compute the Reduced density matrices of the two global states Psi_0 and Psi_p
+        rho_s0 = rho_single_spin(d_hilbert, n_chain, system_site, Psi_0)
+        rho_sp = rho_single_spin(d_hilbert, n_chain, system_site, Psi_p)
+        # 7a. Compute the Quantum EMD between the two GQS
+        D_local_GQS[i] = Quantum_EMD(chi_s0,lambda_e0,chi_sp,lambda_ep) / Dl0
+        # 7b. Compute the Bures distance between the two reduced density matrices
+        D_local_rho[i] = bures_distance(rho_s0, rho_sp) / Dr0
+        # 8. Evolve the two states
+        Psi_0 = U @ Psi_0
+        Psi_p = U @ Psi_p
+        if renormalize:
+            Psi_0 = Psi_0 / np.linalg.norm(Psi_0)
+            Psi_p = Psi_p / np.linalg.norm(Psi_p)
+    return D_global,D_local_GQS,D_local_rho
+
+def Avg_separation_QKT(dhilbert,nqubit,system_site,U_F,theta0,phi0,eps,N_traj,N_kicks):
+    """
+    Compute the average separation rate of local Quantum EMD over N_traj perturbations.
+
+    Parameters
+    ----------
+    dhilbert : int
+        Local Hilbert space dimension (2 for qubits).
+    nqubit : int
+        Number of qubits in the system.
+    system_site : int
+        Which qubit is the "system" (0-based index).
+    U_F : ndarray
+        Floquet operator (dim, dim).
+    theta0, phi0 : float
+        Initial angles for the reference state.
+    eps : float
+        Perturbation strength (radians).
+    N_traj : int
+        Number of random perturbation trajectories to average over.
+    N_kicks : int
+        Number of kicks (time steps) to evolve.
+
+    Returns
+    -------
+    avg_rates : ndarray, shape (N_kicks,)
+        Average separation rates at each kick.
+    """
+    # Reference initial state
+    Psi_0 = Initial_state(nqubit, theta0, phi0)
+    # --- Initialize the distance arrays ---
+    D_Global= np.zeros((N_traj,N_kicks))
+    D_local_GQS = np.zeros((N_traj,N_kicks))
+    D_local_rho = np.zeros((N_traj,N_kicks))
+    for avg in range(N_traj):
+        # Perturbed initial state
+        Psi_pert, _, _ = perturb_theta_phi_isotropic(nqubit, theta0, phi0, angle_sigma=eps)
+        # Evolve and compute rates
+        dg,dl,dr = Single_its_QKT(U_F,Psi_0,Psi_pert,dhilbert,nqubit,system_site=system_site,N_kicks=N_kicks)
+        D_Global[avg,:] = dg
+        D_local_GQS[avg,:] = dl
+        D_local_rho[avg,:] = dr
+    # Compute average rates
+    ln_avg_dist_G = LLE_ln_avg_distance_separation(D_Global,N_kicks)
+    ln_avg_dist_L = LLE_ln_avg_distance_separation(D_local_GQS,N_kicks)
+    ln_avg_dist_R = LLE_ln_avg_distance_separation(D_local_rho,N_kicks)
+    avg_D_G = np.mean(D_Global,axis=0)
+    avg_D_L = np.mean(D_local_GQS,axis=0)
+    avg_D_R = np.mean(D_local_rho,axis=0)
+    datal = {}
+    datal['ln_avg_dist_G'] = ln_avg_dist_G
+    datal['ln_avg_dist_L'] = ln_avg_dist_L
+    datal['ln  avg_dist_R'] = ln_avg_dist_R
+    datal['avg_D_G'] = avg_D_G
+    datal['avg_D_L'] = avg_D_L
+    datal['avg_D_R'] = avg_D_R
+    return datal
+
