@@ -1,3 +1,17 @@
+"""Geometric Quantum States (GQS) toolkit.
+
+This package contains utilities for:
+- building spin-coherent product states,
+- evolving many-body dynamics (e.g., kicked top),
+- extracting environment-conditioned (GQS) ensembles,
+- computing ensemble distances (Wasserstein/OT),
+- and computing sensitivity diagnostics (Gamma).
+
+Modules are split for clarity and easier reuse.
+"""
+
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
