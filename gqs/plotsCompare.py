@@ -24,8 +24,8 @@ def Plot_Avg_Separation(data_dist,N_kicks):
   ml3, _, _ = plt.stem(range(N_kicks), D_local_rho,linefmt='C2-',markerfmt='C2s',basefmt=' ',label='Bures Distance')
   ml3.set_markersize(2)
   plt.xlabel('n - Number of Floquet Kicks',fontsize=14)
-  plt.ylabel(r'$log(\frac{d(n)}{d(0)})$',fontsize=14)
-  plt.title('Comparison of Global and Local Distances over Time',fontsize=16)
+  plt.ylabel(r'$\langle log(\frac{d(n)}{d(0)})\rangle$',fontsize=14)
+  plt.title('Comparison of Average Global and Local Distances over Time',fontsize=16)
   plt.legend(fontsize=12)
   plt.grid(alpha=0.3)
   plt.tight_layout()
@@ -316,5 +316,6 @@ def plot_gqs_and_rho_before_after_kick(
         d_qemd_before, d_qemd_after,
         d_bures_before, d_bures_after
     )
+
 
 
