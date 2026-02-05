@@ -11,6 +11,26 @@ from .gqs import bloch_from_chi, aggregate_bloch
 from .states import Reduced_state_single_site, rho_single_spin
 from .distances import Quantum_EMD, bures_distance
 
+def Plot_Avg_Separation(data_dist):
+  D_global = data_dist['ln_avg_dist_G']
+  D_local = data_dist['ln_avg_dist_L']
+  D_local_rho = data_dist['ln_avg_dist_R']
+
+  plt.figure(figsize=(12,3))
+  ml1, _, _ = plt.stem(range(N_kicks), D_global,linefmt='C0-',markerfmt='C0o',basefmt=' ',label='Global State Distance')
+  ml1.set_markersize(2)
+  ml2, _, _ = plt.stem(range(N_kicks), D_local,linefmt='C1-',markerfmt='C1^',basefmt=' ',label='Quantum EMD')
+  ml2.set_markersize(2)
+  ml3, _, _ = plt.stem(range(N_kicks), D_local_rho,linefmt='C2-',markerfmt='C2s',basefmt=' ',label='Bures Distance')
+  ml3.set_markersize(2)
+  plt.xlabel('n - Number of Floquet Kicks',fontsize=14)
+  plt.ylabel(r'$log(\frac{d(n)}{d(0)})$',fontsize=14)
+  plt.title('Comparison of Global and Local Distances over Time',fontsize=16)
+  plt.legend(fontsize=12)
+  plt.grid(alpha=0.3)
+  plt.tight_layout()
+  plt.show()
+
 def _GQS_Bloch_Sphere_two_chi_on_ax(
     ax, chi_S1, qz1, chi_S2, qz2,
     marker1='o', marker2='^',
@@ -296,3 +316,4 @@ def plot_gqs_and_rho_before_after_kick(
         d_qemd_before, d_qemd_after,
         d_bures_before, d_bures_after
     )
+
