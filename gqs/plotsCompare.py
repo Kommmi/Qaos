@@ -11,7 +11,7 @@ from .gqs import bloch_from_chi, aggregate_bloch
 from .states import Reduced_state_single_site, rho_single_spin
 from .distances import Quantum_EMD, bures_distance
 
-def Plot_Avg_Separation(data_dist):
+def Plot_Avg_Separation(data_dist,N_kicks):
   D_global = data_dist['ln_avg_dist_G']
   D_local = data_dist['ln_avg_dist_L']
   D_local_rho = data_dist['ln_avg_dist_R']
@@ -316,4 +316,5 @@ def plot_gqs_and_rho_before_after_kick(
         d_qemd_before, d_qemd_after,
         d_bures_before, d_bures_after
     )
+
 
