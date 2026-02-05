@@ -498,7 +498,7 @@ def Avg_separation_QKT(dhilbert,nqubit,system_site,U_F,theta0,phi0,eps,N_traj,N_
     datal = {}
     datal['ln_avg_dist_G'] = ln_avg_dist_G
     datal['ln_avg_dist_L'] = ln_avg_dist_L
-    datal['ln  avg_dist_R'] = ln_avg_dist_R
+    datal['ln_avg_dist_R'] = ln_avg_dist_R
     datal['avg_D_G'] = avg_D_G
     datal['avg_D_L'] = avg_D_L
     datal['avg_D_R'] = avg_D_R
