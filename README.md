@@ -1,71 +1,107 @@
-# Geometric Transport of Quantum State Ensembles
+# State-Based Diagnostics of Quantum Dynamical Complexity
 
-This repository implements a **geometric, ensemble-based framework** for studying how small differences in global quantum preparations manifest at the level of **local, environment-conditioned quantum states** in interacting many-body systems.
+This repository implements a **state-based, geometric framework** for quantifying dynamical complexity in interacting quantum systems.
 
-How does a small difference in global coherent preparation manifest at the level of local geometric quantum states under interacting many-body dynamics?  Does interactions with the environment erase information about initial preparation, preserve it, or amplify it at the level of locally accessible quantum-state ensembles.
+The approach extends classical notions of **trajectory sensitivity** and **phase-space exploration** to quantum systems by representing subsystem dynamics as **probability measures over projective Hilbert space**, referred to as **geometric quantum states (GQS)**.
 
 ---
 
 ## ✨ Core Idea
 
-We initialize a many-body system in two **nearby spin-coherent product states**, evolve both under the same global Hamiltonian, and compare their **local reduced states** over time.
+We study how **small differences in global quantum preparations** manifest at the level of **local subsystem dynamics** under interactions.
 
-Rather than working only with density matrices, we represent reduced states as **geometric quantum states (GQS)**:
-probability measures on projective Hilbert space arising from environment conditioning.
+Rather than representing reduced states solely as density matrices, we construct **environment-conditioned ensembles of pure states**, yielding a geometric representation:
+\[
+Q^S(Z,t) = \sum_j \lambda_j(t)\,\delta(Z - Z_j^S(t)).
+\]
 
-Distances between these ensembles are quantified using the **Wasserstein (optimal transport) distance**, which captures **geometric deformation and transport of probability mass**, not just operator-level distinguishability.
+Distances between these ensembles are computed using **Wasserstein (optimal transport) geometry**, enabling a direct characterization of how probability mass **deforms and spreads** on the quantum state manifold.
 
 ---
 
-## 🔬 Main Question
+## 🔬 Diagnostics of Quantum Complexity
 
-> **How does a small difference in global coherent preparation manifest at the level of locally accessible quantum states under interacting many-body dynamics?**
+This framework introduces two complementary diagnostics:
 
-- Do interactions with the environment erase information about the initial preparation?
-- Do local geometric differences persist?
-- Or can local sensitivity be amplified, even when global distinguishability is conserved?
+### • Distinguishability Growth Rate (Γ)
+Measures the average exponential growth of distances between nearby GQS ensembles:
+- quantifies **local sensitivity**
+- serves as a quantum analogue of a Lyapunov exponent
+
+### • State-Space Coverage Index (SSCI)
+Measures how widely the subsystem explores its state space over time:
+- quantifies **global spreading**
+- captures long-time geometric exploration
+
+Together, these define a **two-dimensional characterization of complexity**:
+> sensitivity (Γ) vs spread (SSCI)
 
 ---
 
 ## 🧠 Why Geometric Quantum States?
 
-Traditional reduced-state measures (e.g. entropy or trace distance) collapse the state to a single operator-level object.
+Standard reduced-state measures (entropy, trace distance) compress dynamics into a single operator.
 
-In contrast, **geometric quantum states**:
-- retain information about **where probability mass lies** on the quantum state manifold,
-- distinguish between ensembles that are equally mixed but geometrically distinct,
-- naturally connect to **optimal transport and Wasserstein geometry**.
+In contrast, GQS:
+- retain the **distribution of pure states** on projective Hilbert space,
+- distinguish geometrically distinct ensembles with identical density matrices,
+- provide a natural connection to **optimal transport geometry**.
 
-This makes them ideal for studying **ensemble-level sensitivity** in open and many-body quantum systems.
+This enables a **state-based perspective on quantum complexity**, complementing operator-based diagnostics such as OTOCs and Loschmidt echoes.
 
 ---
 
-## 📐 Distance Measures Used
+## 📐 Distance Measures
 
 - **Fubini–Study distance**  
-  Used for pure global and local states at initial times.
+  Geometry of pure states on projective Hilbert space
 
-- **Bures / fidelity-based distances**  
-  Used for operator-level comparison of reduced density matrices.
+- **Wasserstein distance (primary tool)**  
+  Quantifies transport of probability mass between GQS ensembles
 
-- **Wasserstein distance (primary focus)**  
-  Used to quantify geometric transport between GQS ensembles:
-  how far probability mass must move on projective Hilbert space to transform one ensemble into another.
+- *(Optional)* Operator-based distances for comparison
 
 ---
 
-## ⚙️ Algorithm Overview
+## ⚙️ Computational Workflow
 
-1. Prepare a global spin-coherent product state.
-2. Prepare a nearby global coherent state with a small perturbation.
-3. Evolve both states under the same global Hamiltonian.
-4. Decompose the global state into system–environment form.
-5. Construct environment-conditioned system states.
-6. Represent reduced states as geometric quantum state ensembles.
-7. Compute Wasserstein distance between ensembles.
-8. Repeat for multiple perturbations and average the distance growth.
+1. Initialize a global spin-coherent product state  
+2. Apply a small perturbation to generate nearby initial conditions  
+3. Evolve under a global interacting Hamiltonian (e.g. quantum kicked top)  
+4. Construct environment-conditioned subsystem states  
+5. Build geometric quantum state ensembles (GQS)  
+6. Compute Wasserstein distances between ensembles  
+7. Estimate:
+   - **Γ (sensitivity)**
+   - **SSCI (state-space exploration)**
 
-The resulting distance dynamics quantify **geometric sensitivity of local quantum states**.
+---
+
+## 📊 What This Repository Enables
+
+- Quantification of **interaction-induced complexity**
+- Visualization of **deformation of subsystem state space**
+- Analysis of:
+  - interaction strength (κ)
+  - initial state dependence (θ, φ)
+  - environment size (Lₑ)
+  - even–odd system-size effects
+
+---
+
+## 📌 Key Perspective
+
+Complexity in quantum systems emerges not only through operator growth, but through the **geometric redistribution of probability mass** over the space of pure states.
+
+This framework makes that redistribution **directly measurable and interpretable**.
+
+---
+
+%## 🔗 Links
+
+%- 📄 Paper: *[add arXiv link here]*  
+%- 💻 Repository: *[this repository]*  
+
 
 ---
 
