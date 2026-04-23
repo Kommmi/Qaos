@@ -2,6 +2,8 @@
 
 This repository implements a **state-based, geometric framework** for quantifying dynamical complexity in interacting quantum systems.
 
+ ![Quantum-Dynamical-Systems](temph-1.jpg)
+
 The approach extends classical notions of **trajectory sensitivity** and **phase-space exploration** to quantum systems by representing subsystem dynamics as **probability measures over projective Hilbert space**, referred to as **geometric quantum states (GQS)**.
 
 ---
