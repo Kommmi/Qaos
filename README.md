@@ -89,6 +89,8 @@ This enables a **state-based perspective on quantum complexity**, complementing 
   - environment size (Lₑ)
   - even–odd system-size effects
 
+  ![Quantum-Dynamical-Systems](imagesREADME/three_LE_gqs_odd.gif)
+  ![Quantum-Dynamical-Systems](imagesREADME/three_LE_gqs_even.gif)
 ---
 
 ## 📌 Key Perspective
