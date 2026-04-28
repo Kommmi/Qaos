@@ -6,56 +6,24 @@ This repository implements a **state-based, geometric framework** for quantifyin
 
 The approach extends classical notions of **trajectory sensitivity** and **phase-space exploration** to quantum systems by representing subsystem dynamics as **probability measures over projective Hilbert space**, referred to as **geometric quantum states (GQS)**.
 
-**System-envionment state**: $$|\Psi_{SE}(t)\rangle =\sum_{k=1}^{d_S}\sum_{j=1}^{d_E}\psi_{kj}(t)\, |s_k\rangle \otimes |e_j\rangle$$
-
-**System-envionment state (environment-conditioned decomposition)**: $$|\Psi_{SE}(t)\rangle=\sum_{j=1}^{d_E}\sqrt{\lambda_j^{E}(t)} \,|\chi_j^{S}(t)\rangle|e_j\rangle .$$
-
-
----
-
-## ✨ Core Idea
-
-We study how **small differences in global quantum preparations** manifest at the level of **local subsystem dynamics** under interactions.
-
-Rather than representing reduced states solely as density matrices, we construct **environment-conditioned ensembles of pure states**, yielding a geometric representation:
-
-$$Q^S(Z,t) = \sum_j \lambda_j(t)\,\delta(Z - Z_j^S(t)).$$
-
-Distances between these ensembles are computed using **Wasserstein (optimal transport) geometry**, enabling a direct characterization of how probability mass **deforms and spreads** on the quantum state manifold.
-
- ![Quantum-Dynamical-Systems](imagesREADME/three_kappa_gqs.gif)
-<img src="imagesREADME/three_kappa_gqs_distance.gif" width="90%">
----
-
-## 🔬 Diagnostics of Quantum Complexity
-
-This framework introduces two complementary diagnostics:
-
-### • Distinguishability Growth Rate (Γ)
-Measures the average exponential growth of distances between nearby GQS ensembles:
-- quantifies **local sensitivity**
-- serves as a quantum analogue of a Lyapunov exponent
-
-### • State-Space Coverage Index (SSCI)
-Measures how widely the subsystem explores its state space over time:
-- quantifies **global spreading**
-- captures long-time geometric exploration
-
-Together, these define a **two-dimensional characterization of complexity**:
-> sensitivity (Γ) vs spread (SSCI)
-
 ---
 
 ## 🧠 Why Geometric Quantum States?
 
-Standard reduced-state measures (entropy, trace distance) compress dynamics into a single operator.
+**System-envionment state (Global State)**: $$|\Psi_{SE}(t)\rangle =\sum_{k=1}^{d_S}\sum_{j=1}^{d_E}\psi_{kj}(t)\, |s_k\rangle \otimes |e_j\rangle$$
 
-In contrast, GQS:
+**System-envionment state (environment-conditioned decomposition)**: $$|\Psi_{SE}(t)\rangle=\sum_{j=1}^{d_E}\sqrt{\lambda_j^{E}(t)} \,|\chi_j^{S}(t)\rangle|e_j\rangle .$$
+
+**System state - Reduced Density Matrix**:
+
+- reproduces all observable statistics of the subsystem
+- encodes this ensemble structure only implicitly, distinct probability distributions on $\mathbb{C}P^{d_S-1}$ may correspond to the same density matrix
+
+**System state - Geometric Quantum State**:
+
 - retain the **distribution of pure states** on projective Hilbert space,
 - distinguish geometrically distinct ensembles with identical density matrices,
 - provide a natural connection to **optimal transport geometry**.
-
-This enables a **state-based perspective on quantum complexity**, complementing operator-based diagnostics such as OTOCs and Loschmidt echoes.
 
 ---
 
@@ -68,6 +36,35 @@ This enables a **state-based perspective on quantum complexity**, complementing 
   Quantifies transport of probability mass between GQS ensembles
 
 - *(Optional)* Operator-based distances for comparison
+
+---
+
+## ✨ Core Idea
+
+We study how **small differences in global quantum preparations** manifest at the level of **local subsystem dynamics** under interactions. 
+
+Distances between these ensembles are computed using **Wasserstein (optimal transport) geometry**, directly capturing how probability mass **deforms and spreads** on the quantum state manifold. This provides a**state-based perspective on quantum complexity**, complementing operator-based diagnostics such as OTOCs and Loschmidt echoes.
+
+ ![Quantum-Dynamical-Systems](imagesREADME/three_kappa_gqs.gif)
+<img src="imagesREADME/three_kappa_gqs_distance.gif" width="90%">
+---
+
+## 🔬 Diagnostics of Quantum Complexity
+
+This framework introduces two complementary diagnostics:
+
+### • Distinguishability Growth Measure (Γ)
+Measures the average exponential growth of distances between nearby GQS ensembles:
+- quantifies **local sensitivity**
+- serves as a quantum analogue of a Lyapunov exponent
+
+### • State-Space Coverage Index (SSCI)
+Measures how widely the subsystem explores its state space over time:
+- quantifies **global spreading**
+- captures long-time geometric exploration
+
+Together, these define a **two-dimensional characterization of complexity**:
+> sensitivity (Γ) vs spread (SSCI)
 
 ---
 
@@ -87,7 +84,7 @@ This enables a **state-based perspective on quantum complexity**, complementing 
 
 ## 📊 What This Repository Enables
 
-- Quantification of **interaction-induced complexity**
+- Quantification of **interaction-induced complexity** using 
 - Visualization of **deformation of subsystem state space**
 - Analysis of:
   - interaction strength (κ)
