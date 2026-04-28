@@ -10,9 +10,9 @@ The approach extends classical notions of **trajectory sensitivity** and **phase
 
 ## 🧠 Why Geometric Quantum States?
 
-**System-envionment state (Global State)**: $$|\Psi_{SE}(t)\rangle =\sum_{k=1}^{d_S}\sum_{j=1}^{d_E}\psi_{kj}(t)\, |s_k\rangle \otimes |e_j\rangle$$
+**System-envionment state (Global State)**: $$|\Psi_{SE}(t)\rangle =\sum_{k=1}^{d_S}\sum_{j=1}^{d_E}\psi_{kj}(t) |s_k\rangle \otimes |e_j\rangle$$
 
-**System-envionment state (environment-conditioned decomposition)**: $$|\Psi_{SE}(t)\rangle=\sum_{j=1}^{d_E}\sqrt{\lambda_j^{E}(t)} \,|\chi_j^{S}(t)\rangle|e_j\rangle .$$
+**System-envionment state (environment-conditioned decomposition)**: $$|\Psi_{SE}(t)\rangle=\sum_{j=1}^{d_E}\sqrt{\lambda_j^{E}(t)} |\chi_j^{S}(t)\rangle|e_j\rangle .$$
 - $$|\chi_j^{S}(t)\rangle=\frac{1}{\sqrt{\lambda_j^{E}(t)}} \sum_{k=1}^{d_S}\psi_{kj}(t)|s_k\rangle,$$
 - $$\lambda_j^{E}(t)=\sum_{k=1}^{d_S}|\psi_{kj}(t)|^2$$.
 
