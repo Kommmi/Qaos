@@ -34,6 +34,7 @@ The approach extends classical notions of **trajectory sensitivity** and **phase
 
 - **Wasserstein distance (primary tool)**  
   Quantifies transport of probability mass between GQS ensembles
+  <img src="imagesREADME/bloch_ot_tables.jpg" width="70%">
 
 - *(Optional)* Operator-based distances for comparison
 
