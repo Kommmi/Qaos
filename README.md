@@ -6,6 +6,8 @@ This repository implements a **state-based, geometric framework** for quantifyin
 
 The approach extends classical notions of **trajectory sensitivity** and **phase-space exploration** to quantum systems by representing subsystem dynamics as **probability measures over projective Hilbert space**, referred to as **geometric quantum states (GQS)**.
 
+**System-envionment state**: $$|\Psi_{SE}(t)\rangle =\sum_{k=1}^{d_S}\sum_{j=1}^{d_E}\psi_{kj}(t)\, |s_k\rangle \otimes |e_j\rangle$$
+
 ---
 
 ## ✨ Core Idea
@@ -13,6 +15,7 @@ The approach extends classical notions of **trajectory sensitivity** and **phase
 We study how **small differences in global quantum preparations** manifest at the level of **local subsystem dynamics** under interactions.
 
 Rather than representing reduced states solely as density matrices, we construct **environment-conditioned ensembles of pure states**, yielding a geometric representation:
+
 $$Q^S(Z,t) = \sum_j \lambda_j(t)\,\delta(Z - Z_j^S(t)).$$
 
 Distances between these ensembles are computed using **Wasserstein (optimal transport) geometry**, enabling a direct characterization of how probability mass **deforms and spreads** on the quantum state manifold.
