@@ -13,15 +13,14 @@ The approach extends classical notions of **trajectory sensitivity** and **phase
 **System-envionment state (Global State)**: $$|\Psi_{SE}(t)\rangle =\sum_{k=1}^{d_S}\sum_{j=1}^{d_E}\psi_{kj}(t)\, |s_k\rangle \otimes |e_j\rangle$$
 
 **System-envionment state (environment-conditioned decomposition)**: $$|\Psi_{SE}(t)\rangle=\sum_{j=1}^{d_E}\sqrt{\lambda_j^{E}(t)} \,|\chi_j^{S}(t)\rangle|e_j\rangle .$$
-
-Here, $$|\chi_j^{S}(t)\rangle=\frac{1}{\sqrt{\lambda_j^{E}(t)}} \sum_{k=1}^{d_S}\psi_{kj}(t)|s_k\rangle,$$ with associated probabilities, $$\lambda_j^{E}(t)
-=\sum_{k=1}^{d_S}|\psi_{kj}(t)|^2$$.
+- $$|\chi_j^{S}(t)\rangle=\frac{1}{\sqrt{\lambda_j^{E}(t)}} \sum_{k=1}^{d_S}\psi_{kj}(t)|s_k\rangle,$$
+- $$\lambda_j^{E}(t)=\sum_{k=1}^{d_S}|\psi_{kj}(t)|^2$$.
 
 **System state - Reduced Density Matrix**: $$\rho_S(t) = \sum_{j=1}^{d_E}\lambda_j^{E}(t)|\chi_j^{S}(t)\rangle\langle\chi_j^{S}(t)|$$
 - reproduces all observable statistics of the subsystem
 - encodes this ensemble structure only implicitly, distinct probability distributions on $\mathbb{C}P^{d_S-1}$ may correspond to the same density matrix
 
-**System state - Geometric Quantum State**: $$Q^S(Z,t)=\sum_{j=1}^{d_E}\lambda_j^{E}(t)\,\delta\!\left(Z-\mathbf{Z}_j^{S}(t)\right) \in \mathcal{P}\!\left(\mathbb{C}P^{d_S-1}\right).$$
+**System state - Geometric Quantum State**: $$Q^S(Z,t)=\sum_{j=1}^{d_E}\lambda_j^{E}(t)\,\delta \left(Z-\mathbf{Z}_j^{S}(t)\right) \in \mathcal{P} \left(\mathbb{C}P^{d_S-1}\right).$$
 - retain the **distribution of pure states** on projective Hilbert space,
 - distinguish geometrically distinct ensembles with identical density matrices,
 - provide a natural connection to **optimal transport geometry**.
