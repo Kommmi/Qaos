@@ -18,7 +18,7 @@ $$Q^S(Z,t) = \sum_j \lambda_j(t)\,\delta(Z - Z_j^S(t)).$$
 Distances between these ensembles are computed using **Wasserstein (optimal transport) geometry**, enabling a direct characterization of how probability mass **deforms and spreads** on the quantum state manifold.
 
  ![Quantum-Dynamical-Systems](imagesREADME/three_kappa_gqs.gif)
-<img src="imagesREADME/three_kappa_gqs_distance.gif" width="70%">
+<img src="imagesREADME/three_kappa_gqs_distance.gif" width="90%">
 ---
 
 ## 🔬 Diagnostics of Quantum Complexity
