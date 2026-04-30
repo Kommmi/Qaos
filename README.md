@@ -20,7 +20,7 @@ The approach extends classical notions of **trajectory sensitivity** and **phase
 - reproduces all observable statistics of the subsystem
 - encodes this ensemble structure only implicitly, distinct probability distributions on $\mathbb{C}P^{d_S-1}$ may correspond to the same density matrix
 
-**System state - Geometric Quantum State**: $$Q^S(Z,t)=\sum_{j=1}^{d_E}\lambda_j^{E}(t) \delta \left(Z-\mathbf{Z}_j^{S}(t)\right) \in \mathcal{P} \left(\mathbb{C}P^{d_S-1}\right).$$
+**System state - Geometric Quantum State**: $$Q^S(Z,t)=\sum_{j=1}^{d_E}\lambda_j^{E}(t) \delta \left(Z-\mathbf{Z}_j^{S}(t)\right) \in \mathcal{P} \left(\mathbb{C}P^{d_S-1}\right),$$ where $\mathbf{Z}_j^{S}(t)$ denotes the point in projective Hilbert space corresponding to $|\chi_j^{S}(t)\rangle$.
 - retain the **distribution of pure states** on projective Hilbert space,
 - distinguish geometrically distinct ensembles with identical density matrices,
 - provide a natural connection to **optimal transport geometry**.
