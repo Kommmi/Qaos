@@ -13,7 +13,9 @@ Modules are split for clarity and easier reuse.
 from __future__ import annotations
 
 import numpy as np
+import pandas as pd
 from numpy import linalg as LA
+from gqs.distances import Psi_Dist, _mask_chi_lambda
 
 def Initial_state(nqubit, theta0, phi0):
     """
@@ -152,3 +154,257 @@ def rho_single_spin(d_hilbert, n_chain, system_site, Psi_SE):
     rho_s = 0.5 * (rho_s + rho_s.conj().T)
 
     return rho_s
+
+def random_wavefunction(num_qubits, seed=None):
+    """
+    Return a normalized random wavefunction for `num_qubits`.
+
+    The state lives in a Hilbert space of dimension 2**num_qubits:
+        |Psi_SE> = sum_i psi_i |i>
+
+    Parameters
+    ----------
+    num_qubits : int
+        Total number of qubits in S + E.
+    seed : int or None
+        Random seed for reproducibility.
+
+    Returns
+    -------
+    psi : np.ndarray
+        Complex normalized wavefunction of shape (2**num_qubits,).
+    """
+    rng = np.random.default_rng(seed)
+
+    dim = 2**num_qubits
+
+    # Random complex amplitudes
+    psi = rng.normal(size=dim) + 1j * rng.normal(size=dim)
+
+    # Normalize
+    psi = psi / np.linalg.norm(psi)
+
+    return psi
+
+def print_wavefunction(psi, tol=1e-12, ncols=4):
+    """
+    Print wavefunction in computational basis using multiple columns,
+    with '+' signs between terms.
+    """
+    dim = len(psi)
+    num_qubits = int(np.log2(dim))
+
+    entries = []
+
+    for i, amp in enumerate(psi):
+        if abs(amp) > tol:
+            basis = format(i, f"0{num_qubits}b")
+            entries.append(f"({amp:.4f}) |{basis}>")
+
+    for i in range(0, len(entries), ncols):
+        row = entries[i:i+ncols]
+
+        # Add + between entries in the same row
+        line = " + ".join(f"{entry:<28}" for entry in row)
+
+        # Add + at the end of the row if more entries remain
+        if i + ncols < len(entries):
+            line += " +"
+
+        print(line)
+
+def print_density_matrix(rho, basis_labels=None, precision=4, title=r"rho_S"):
+    """
+    Print a density matrix nicely with optional basis labels.
+
+    Parameters
+    ----------
+    rho : np.ndarray
+        Density matrix.
+    basis_labels : list of str or None
+        Basis labels, e.g. ["|0>", "|1>"].
+    precision : int
+        Number of digits to print.
+    title : str
+        Name/title for the matrix.
+    """
+    rho = np.asarray(rho)
+
+    d = rho.shape[0]
+
+    if basis_labels is None:
+        basis_labels = [f"|{i}>" for i in range(d)]
+
+    print(f"{title} =")
+    print()
+
+    # Header row
+    header = " " * 10
+    for label in basis_labels:
+        header += f"{label:^18}"
+    print(header)
+
+    # Matrix rows
+    for i in range(d):
+        row = f"{basis_labels[i]:<10}"
+        for j in range(d):
+            row += f"{format_complex(rho[i, j], precision):^18}"
+        print(row)
+
+    print()
+    print(f"Trace = {np.trace(rho).real:.{precision}f}")
+    print(f"Hermitian check = {np.allclose(rho, rho.conj().T)}")
+
+
+def format_complex(z, precision=4, chop=1e-12):
+    """
+    Nicely format a complex number.
+    """
+    z = complex(z)
+
+    real = 0.0 if abs(z.real) < chop else z.real
+    imag = 0.0 if abs(z.imag) < chop else z.imag
+
+    if imag == 0:
+        return f"{real:.{precision}f}"
+    elif real == 0:
+        return f"{imag:.{precision}f}j"
+    elif real == 0 and imag == 0:
+        return f"0.{precision}f"
+    elif imag > 0:
+        return f"{real:.{precision}f}+{imag:.{precision}f}j"
+    else:
+        return f"{real:.{precision}f}{imag:.{precision}f}j"
+
+
+def gqs_single_site_table(
+    chi_S,
+    lambda_E,
+    d_hilbert=2,
+    n_chain=None,
+    precision=4,
+    tol=1e-12,
+):
+    """
+    Return the single-site GQS as a pandas DataFrame.
+
+    Columns:
+        1. j
+        2. environment state
+        3. |chi_j^S>
+        4. lambda_E[j]
+    """
+    chi_S = np.asarray(chi_S)
+    lambda_E = np.asarray(lambda_E)
+
+    d_E, d_S = chi_S.shape
+
+    if n_chain is not None:
+        n_env = n_chain - 1
+    else:
+        n_env = int(np.round(np.log(d_E) / np.log(d_hilbert)))
+
+    rows = []
+
+    for j in range(d_E):
+        lam = lambda_E[j]
+
+        if lam <= tol:
+            continue
+
+        # Environment basis label
+        if d_hilbert == 2:
+            env_label = f"|{format(j, f'0{n_env}b')}>"
+        else:
+            env_label = f"|e_{j}>"
+
+        # Conditional subsystem state
+        terms = []
+        for k in range(d_S):
+            amp = chi_S[j, k]
+
+            if abs(amp) > tol:
+                amp_str = format_complex(amp, precision=precision)
+                terms.append(f"({amp_str}) |{k}>"
+)
+
+        chi_str = " + ".join(terms)
+
+        rows.append(
+            {
+                "j": j,
+                "Environment state": env_label,
+                r"|χ_j^S⟩": chi_str,
+                r"λ_E[j]": np.round(lam, precision),
+            }
+        )
+
+    return pd.DataFrame(rows)
+
+
+def print_gqs_single_site(
+    chi_S,
+    lambda_E,
+    d_hilbert=2,
+    n_chain=None,
+    system_site=None,
+    precision=4,
+    tol=1e-12,
+    title="Geometric Quantum State Q^S"
+):
+    """
+    Print the environment-conditioned GQS ensemble nicely.
+
+    Parameters
+    ----------
+    chi_S : np.ndarray
+        Conditional subsystem states, shape (d_E, d_hilbert).
+        Row j is |chi_j^S>.
+    lambda_E : np.ndarray
+        Environment probabilities, shape (d_E,).
+    d_hilbert : int
+        Local Hilbert space dimension.
+    n_chain : int or None
+        Total number of sites. Used only for labeling environment states.
+    system_site : int or None
+        Chosen subsystem site. Used only for printing context.
+    precision : int
+        Number of digits to print.
+    tol : float
+        Threshold for skipping zero-probability environment outcomes.
+    title : str
+        Title for printed output.
+    """
+    chi_S = np.asarray(chi_S)
+    lambda_E = np.asarray(lambda_E)
+
+    d_E, d_S = chi_S.shape
+
+    if n_chain is not None:
+        n_env = n_chain - 1
+    else:
+        n_env = int(np.log(d_E) / np.log(d_hilbert))
+
+    print(title)
+    print("=" * len(title))
+
+    if system_site is not None:
+        print(f"Subsystem site: {system_site}")
+    print(f"Subsystem dimension d_S = {d_S}")
+    print(f"Number of environment outcomes d_E = {d_E}")
+    print()
+
+    df_gqs = gqs_single_site_table(
+    chi_S,
+    lambda_E,
+    d_hilbert=2,
+    n_chain=3,
+    precision=3
+    )
+
+    styles = [
+        {'selector': 'td, th', 'props': [('border-right', '1px solid #ddd')]}
+    ]
+    styled_df = df_gqs.style.set_table_styles(styles)
+    display(styled_df)
+    return
