@@ -276,7 +276,6 @@ def format_complex(z, precision=4, chop=1e-12):
     else:
         return f"{real:.{precision}f}{imag:.{precision}f}j"
 
-
 def gqs_single_site_table(
     chi_S,
     lambda_E,
@@ -299,10 +298,23 @@ def gqs_single_site_table(
 
     d_E, d_S = chi_S.shape
 
+    # Infer number of environment sites from d_E
+    n_env = int(np.round(np.log(d_E) / np.log(d_hilbert)))
+
+    if d_hilbert**n_env != d_E:
+        raise ValueError(
+            f"d_E={d_E} is not compatible with d_hilbert={d_hilbert}."
+        )
+
+    # Optional consistency check
     if n_chain is not None:
-        n_env = n_chain - 1
-    else:
-        n_env = int(np.round(np.log(d_E) / np.log(d_hilbert)))
+        expected_d_E = d_hilbert**(n_chain - 1)
+        if expected_d_E != d_E:
+            raise ValueError(
+                f"Inconsistent n_chain={n_chain}: expected d_E={expected_d_E}, "
+                f"but chi_S has d_E={d_E}. "
+                f"For d_E={d_E} and d_hilbert={d_hilbert}, use n_chain={n_env + 1}."
+            )
 
     rows = []
 
@@ -325,8 +337,7 @@ def gqs_single_site_table(
 
             if abs(amp) > tol:
                 amp_str = format_complex(amp, precision=precision)
-                terms.append(f"({amp_str}) |{k}>"
-)
+                terms.append(f"({amp_str}) |{k}>")
 
         chi_str = " + ".join(terms)
 
@@ -340,7 +351,6 @@ def gqs_single_site_table(
         )
 
     return pd.DataFrame(rows)
-
 
 def print_gqs_single_site(
     chi_S,
@@ -398,7 +408,6 @@ def print_gqs_single_site(
     chi_S,
     lambda_E,
     d_hilbert=2,
-    n_chain=3,
     precision=3
     )
 
