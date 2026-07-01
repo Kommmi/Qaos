@@ -5,6 +5,7 @@ from matplotlib.gridspec import GridSpec
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize
 import matplotlib.ticker as mticker
+from matplotlib.colors import LinearSegmentedColormap
 
 from .distances import _mask_chi_lambda
 from .gqs import bloch_from_chi, aggregate_bloch
@@ -317,5 +318,537 @@ def plot_gqs_and_rho_before_after_kick(
         d_bures_before, d_bures_after
     )
 
+
+def plot_density_matrix_from_gqs(
+    states,
+    weights=None,
+    ax=None,
+    title="Density matrix",
+    show_bottom_text=False,
+    bottom_text="Ensembles of particles\nAny length vectors",
+    rhoS_label=None,
+    rhoS_label_pos=(0.5, -0.1,0),
+    arrow_color="#756ef9",
+    sphere_alpha=0.10,
+    elev=20,
+    azim=-35
+):
+    """
+    Plot the density matrix corresponding to a single-qubit GQS on a Bloch sphere.
+
+    Parameters
+    ----------
+    states : ndarray, shape (N, 2) or (N, 3)
+        GQS states. Two allowed formats:
+
+        1. Pure state kets:
+           states[j] = [alpha_j, beta_j], complex, normalized or unnormalized.
+           Then rho = sum_j w_j |psi_j><psi_j|.
+
+        2. Bloch vectors:
+           states[j] = [x_j, y_j, z_j], real, with ||r_j|| <= 1.
+           Then rho_j = (I + r_j . sigma)/2 and rho = sum_j w_j rho_j.
+
+    weights : array-like, shape (N,), optional
+        Ensemble weights. If None, uniform weights are used.
+
+    ax : matplotlib 3D axis, optional
+        If None, a new figure and axis are created.
+
+    title : str
+        Plot title.
+
+    show_bottom_text : bool
+        Whether to place text under the sphere.
+
+    bottom_text : str
+        Bottom annotation text.
+
+    arrow_color : str
+        Color of the Bloch vector arrow.
+
+    sphere_alpha : float
+        Transparency of Bloch sphere surface.
+
+    elev, azim : float
+        Viewing angles for 3D plot.
+
+    Returns
+    -------
+    rho : ndarray, shape (2, 2)
+        The density matrix.
+
+    r : ndarray, shape (3,)
+        The Bloch vector of rho.
+
+    fig, ax : matplotlib figure and axis
+        Figure/axis containing the plot.
+    """
+    states = np.asarray(states)
+    N = len(states)
+
+    if weights is None:
+        weights = np.ones(N) / N
+    else:
+        weights = np.asarray(weights, dtype=float)
+        weights = weights / np.sum(weights)
+
+    # Pauli matrices
+    sx = np.array([[0, 1], [1, 0]], dtype=complex)
+    sy = np.array([[0, -1j], [1j, 0]], dtype=complex)
+    sz = np.array([[1, 0], [0, -1]], dtype=complex)
+    I2 = np.eye(2, dtype=complex)
+
+    # Build rho
+    if states.ndim != 2:
+        raise ValueError("states must have shape (N,2) for kets or (N,3) for Bloch vectors.")
+
+    if states.shape[1] == 2:
+        # states are kets
+        rho = np.zeros((2, 2), dtype=complex)
+        for w, psi in zip(weights, states):
+            psi = np.asarray(psi, dtype=complex)
+            norm = np.linalg.norm(psi)
+            if norm == 0:
+                raise ValueError("Encountered zero vector in ket input.")
+            psi = psi / norm
+            rho += w * np.outer(psi, np.conjugate(psi))
+
+    elif states.shape[1] == 3:
+        # states are Bloch vectors
+        rho = np.zeros((2, 2), dtype=complex)
+        for w, rj in zip(weights, states):
+            x, y, z = rj
+            rho_j = 0.5 * (I2 + x * sx + y * sy + z * sz)
+            rho += w * rho_j
+    else:
+        raise ValueError("states must have shape (N,2) or (N,3).")
+
+    # Bloch vector of rho
+    rx = np.real(np.trace(rho @ sx))
+    ry = np.real(np.trace(rho @ sy))
+    rz = np.real(np.trace(rho @ sz))
+    r = np.array([rx, ry, rz], dtype=float)
+
+    # Create figure/axis if needed
+    fig = None
+    if ax is None:
+        fig = plt.figure(figsize=(4, 4))
+        ax = fig.add_subplot(111, projection='3d')
+    else:
+        fig = ax.figure
+
+    # Bloch sphere surface
+    u = np.linspace(0, 2*np.pi, 100)
+    v = np.linspace(0, np.pi, 100)
+    xs = np.outer(np.cos(u), np.sin(v))
+    ys = np.outer(np.sin(u), np.sin(v))
+    zs = np.outer(np.ones_like(u), np.cos(v))
+
+    ax.plot_surface(xs, ys, zs, color='lightgray', alpha=sphere_alpha, linewidth=0, shade=True)
+
+    # Meridians / equator
+    t = np.linspace(0, 2*np.pi, 300)
+    ax.plot(np.cos(t), np.sin(t), 0*t, color='gray', alpha=0.5, lw=1)
+    ax.plot(np.cos(t), 0*t, np.sin(t), color='gray', alpha=0.5, lw=1)
+    ax.plot(0*t, np.cos(t), np.sin(t), color='gray', alpha=0.5, lw=1)
+
+    # Axes
+    ax.quiver(0, 0, 0, 1.15, 0, 0, color='black', arrow_length_ratio=0.08, linewidth=1)
+    ax.quiver(0, 0, 0, 0, 1.15, 0, color='black', arrow_length_ratio=0.08, linewidth=1)
+    ax.quiver(0, 0, 0, 0, 0, 1.15, color='black', arrow_length_ratio=0.08, linewidth=1)
+
+    ax.text(1.22, 0, 0, r"$x$", fontsize=16)
+    ax.text(0, 1.22, 0, r"$y$", fontsize=16)
+    ax.text(0.2, 0, 1., r"$z$", fontsize=16)
+
+    # Density-matrix Bloch vector
+    ax.quiver(
+        0, 0, 0,
+        r[0], r[1], r[2],
+        color=arrow_color,
+        arrow_length_ratio=0.25,
+        linewidth=4
+    )
+
+    # Formatting
+    #ax.set_title(title, fontsize=18, pad=16)
+    ax.set_box_aspect((1, 1, 1))
+    ax.set_xlim([-1.1, 1.1])
+    ax.set_ylim([-1.1, 1.1])
+    ax.set_zlim([-1.1, 1.1])
+    ax.view_init(elev=elev, azim=azim)
+    ax.set_axis_off()
+
+    ax.text(
+    0.2, -0.8, 0.8,              # slightly inside but visible
+    r'$\mathcal{D}_2$',
+    fontsize=18,
+    ha='center',
+    va='center',
+    color='black'
+    )
+
+
+    ax.text(
+   -0.1, 0, -1.7,              # slightly inside but visible
+    r'Reduced Density Matrix',
+    fontsize=10,
+    ha='center',
+    va='center',
+    color='black'
+    )
+
+
+    if rhoS_label is not None:
+        ax.text(
+            rhoS_label_pos[0], rhoS_label_pos[1], rhoS_label_pos[2],
+            rhoS_label,
+            fontsize=16,
+            ha='center',
+            va='center',
+            color='black'
+        )
+
+    ax.text(-0.1, 0,  1.3, r'$\left|0\right>$', fontsize=16)
+    ax.text(-0.1, 0, -1.3, r'$\left|1\right>$', fontsize=16)
+
+
+    if show_bottom_text:
+        fig.text(0.5, 0.03, bottom_text, ha='center', va='center', fontsize=14)
+
+    return rho, r, fig, ax
+
+def GQS_Bloch_Sphere_chi(
+    chi_S,
+    qz,
+    m_cmap=None,
+    fname='none',
+    ax=None,
+    add_colorbar=True,
+    show=True,
+    title=None,
+    inner_text=r'$CP^1$',
+    inner_text_pos=(0.2, -0.8, 0.8),
+    env_label=None,
+    env_label_pos=(0.5, -0.1,0),
+    elev=20,
+    azim=-35,
+    sphere_alpha=0.10,
+    point_size=55,
+    axis_arrow_length=1.15,
+    axis_label_size=16,
+    text_size=18,
+    rasterized=True
+):
+    """
+    Plot conditional single-qubit states |chi_a> on the Bloch sphere,
+    colored by their associated probabilities qz = lambda_E[a],
+    in a cleaner 'density-matrix-style' Bloch-sphere format.
+
+    Parameters
+    ----------
+    chi_S : array-like, shape (N, 2)
+        Conditional qubit states.
+    qz : array-like, shape (N,)
+        Associated probabilities.
+    m_cmap : str or Colormap
+        Colormap for probabilities.
+    fname : str
+        If not 'none', save figure as fname + '.png'.
+    ax : matplotlib 3D axis, optional
+        Existing axis to draw on.
+    add_colorbar : bool
+        Whether to add colorbar.
+    show : bool
+        Whether to show figure if axis was created here.
+    title : str or None
+        Optional title.
+    inner_text : str or None
+        Text to place inside the Bloch sphere.
+    inner_text_pos : tuple
+        3D position of the inner text.
+    elev, azim : float
+        Viewing angles.
+    sphere_alpha : float
+        Transparency of sphere.
+    point_size : float
+        Scatter marker size.
+    axis_arrow_length : float
+        Length of custom x,y,z arrows.
+    rasterized : bool
+        Rasterize scatter points for smaller saved file size.
+
+    Returns
+    -------
+    ax : matplotlib 3D axis
+    im : scatter artist
+    """
+    if m_cmap is None:
+        colors_warm_red = ["#ffb3b3", "#ff4d4d", "#b30000", "#5a0000"]
+        cmap_warm_red = LinearSegmentedColormap.from_list("warm_to_red", colors_warm_red)
+        m_cmap = cmap_warm_red
+
+    chi_S = np.asarray(chi_S)
+    qz = np.asarray(qz)
+
+    if chi_S.shape[0] != qz.size:
+        raise ValueError("chi_S and qz must have the same length")
+
+    # Apply your existing masking/renormalization
+    chi_S, qz = _mask_chi_lambda(chi_S, qz, renormalize=True)
+
+    # Bloch coordinates from chi
+    sx, sy, sz = bloch_from_chi(chi_S)
+
+    # Aggregate repeated points if desired
+    sx, sy, sz, qz = aggregate_bloch(sx, sy, sz, qz)
+
+    # Create figure/axis if needed
+    created_ax = ax is None
+    if created_ax:
+        fig = plt.figure(figsize=(5, 5))
+        ax = fig.add_subplot(111, projection='3d')
+    else:
+        fig = ax.figure
+
+    # -------------------------
+    # Bloch sphere surface
+    # -------------------------
+    u = np.linspace(0, 2*np.pi, 100)
+    v = np.linspace(0, np.pi, 100)
+    x = np.outer(np.cos(u), np.sin(v))
+    y = np.outer(np.sin(u), np.sin(v))
+    z = np.outer(np.ones_like(u), np.cos(v))
+
+    ax.plot_surface(
+        x, y, z,
+        color='lightgray',
+        alpha=sphere_alpha,
+        linewidth=0,
+        shade=True
+    )
+
+    # Great circles
+    t = np.linspace(0, 2*np.pi, 400)
+    ax.plot(np.cos(t), np.sin(t), 0*t, color='gray', alpha=0.45, lw=1)
+    ax.plot(np.cos(t), 0*t, np.sin(t), color='gray', alpha=0.45, lw=1)
+    ax.plot(0*t, np.cos(t), np.sin(t), color='gray', alpha=0.45, lw=1)
+
+    # -------------------------
+    # Custom axis arrows
+    # -------------------------
+    ax.quiver(0, 0, 0, axis_arrow_length, 0, 0,
+              color='black', arrow_length_ratio=0.08, linewidth=1)
+    ax.quiver(0, 0, 0, 0, axis_arrow_length, 0,
+              color='black', arrow_length_ratio=0.08, linewidth=1)
+    ax.quiver(0, 0, 0, 0, 0, axis_arrow_length,
+              color='black', arrow_length_ratio=0.08, linewidth=1)
+
+    ax.text(1.22, 0, 0, r'$x$', fontsize=axis_label_size)
+    ax.text(0, 1.22, 0, r'$y$', fontsize=axis_label_size)
+    ax.text(0.2, 0, 1.0, r"$z$", fontsize=axis_label_size)
+
+    # Optional |0>, |1> labels instead of or in addition to z-labels
+    #ax.text(-0.08, 0,  1.10, r'$\left|0\right>$', fontsize=16)
+    # ax.text(-0.08, 0, -1.15, r'$\left|1\right>$', fontsize=16)
+    ax.text(-0.1, 0,  1.3, r'$\left|0\right>$', fontsize=16)
+    ax.text(-0.1, 0, -1.3, r'$\left|1\right>$', fontsize=16)
+
+    # -------------------------
+    # GQS points
+    # -------------------------
+    im = ax.scatter(
+        sx, sy, sz,
+        s=point_size,
+        c=qz,
+        vmin=0,
+        vmax=1,
+        cmap=m_cmap,
+        alpha=1.0,
+        edgecolors='black',
+        linewidths=0.6,
+        rasterized=rasterized
+    )
+
+    # -------------------------
+    # Inner text
+    # -------------------------
+    if inner_text is not None:
+        ax.text(
+            inner_text_pos[0],
+            inner_text_pos[1],
+            inner_text_pos[2],
+            inner_text,
+            fontsize=text_size,
+            ha='center',
+            va='center'
+        )
+    if env_label is not None:
+        ax.text(
+            env_label_pos[0],
+            env_label_pos[1],
+            env_label_pos[2],
+            env_label,
+            fontsize=14,
+            ha='center',
+            va='center'
+        )
+    ax.text(
+   -0.1, 0, -1.7,              # slightly inside but visible
+    r'Reduced State: GQS',
+    fontsize=10,
+    ha='center',
+    va='center',
+    color='black'
+    )
+
+    # -------------------------
+    # Colorbar
+    # -------------------------
+    if add_colorbar:
+        cbar = fig.colorbar(im, ax=ax, shrink=0.5, pad=0.01)
+        cbar.ax.tick_params(labelsize=12)
+        cbar.set_ticks([0, 0.5, 1.0])
+        cbar.ax.set_ylabel(r'$Q^S$', rotation=0, labelpad=18, fontsize=16)
+
+    # -------------------------
+    # Clean formatting
+    # -------------------------
+    if title is not None:
+        ax.set_title(title, fontsize=20, pad=14)
+
+    ax.set_box_aspect((1, 1, 1))
+    ax.set_xlim([-1.1, 1.1])
+    ax.set_ylim([-1.1, 1.1])
+    ax.set_zlim([-1.1, 1.1])
+    ax.view_init(elev=elev, azim=azim)
+
+    # Remove default box/ticks/panes to match the density-matrix style
+    ax.set_axis_off()
+
+    if fname != 'none':
+        fig.savefig(fname + '.png', format='png', dpi=300, bbox_inches='tight')
+
+    if show and created_ax:
+        plt.show()
+
+    return ax, im
+
+def plot_gqs_and_density_matrix(
+    states,
+    weights=None,
+    m_cmap=None,
+    figsize=(9, 4.5),
+    fname=None,
+    show=True,
+    add_colorbar=True,
+    gqs_title=None,
+    rho_title=None,
+    env_label=None,
+    rhoS_label=None,
+    elev=20,
+    azim=-35,
+    wspace=-0.05,
+):
+    """
+    Make a 1 x 2 plot:
+        left  = GQS on Bloch sphere
+        right = reduced density matrix Bloch vector
+
+    Parameters
+    ----------
+    states : array-like, shape (N, 2) or (N, 3)
+        Conditional states. Usually shape (N, 2) for qubit kets |chi_a>.
+        If shape (N, 3), they are interpreted as Bloch vectors for the density plot.
+
+    weights : array-like, shape (N,), optional
+        GQS weights qz = lambda_E[a]. If None, uniform weights are used.
+
+    m_cmap : matplotlib colormap, optional
+        Colormap for GQS weights.
+
+    figsize : tuple
+        Figure size.
+
+    fname : str or None
+        If not None, save figure to this filename.
+
+    show : bool
+        Whether to call plt.show().
+
+    add_colorbar : bool
+        Whether to add colorbar for the GQS plot.
+
+    gqs_title, rho_title : str or None
+        Optional titles.
+
+    env_label, rhoS_label : str or None
+        Optional text labels inside each sphere.
+
+    elev, azim : float
+        Shared viewing angles.
+
+    wspace : float
+        Horizontal spacing between subplots.
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+    axes : ndarray of matplotlib axes
+    rho : ndarray, shape (2, 2)
+        Reduced density matrix.
+
+    r : ndarray, shape (3,)
+        Bloch vector of rho.
+
+    im : matplotlib scatter artist
+        GQS scatter artist.
+    """
+
+    fig = plt.figure(figsize=figsize)
+
+    ax_gqs = fig.add_subplot(1, 2, 1, projection="3d")
+    ax_rho = fig.add_subplot(1, 2, 2, projection="3d")
+
+    # -------------------------
+    # Left: GQS
+    # -------------------------
+    ax_gqs, im = GQS_Bloch_Sphere_chi(
+        chi_S=states,
+        qz=weights,
+        m_cmap=m_cmap,
+        ax=ax_gqs,
+        add_colorbar=add_colorbar,
+        show=False,
+        title=gqs_title,
+        env_label=env_label,
+        elev=elev,
+        azim=azim,
+    )
+
+    # -------------------------
+    # Right: Density matrix
+    # -------------------------
+    rho, r, _, ax_rho = plot_density_matrix_from_gqs(
+        states=states,
+        weights=weights,
+        ax=ax_rho,
+        title=rho_title,
+        rhoS_label=rhoS_label,
+        elev=elev,
+        azim=azim,
+    )
+
+    # Layout
+    fig.subplots_adjust(wspace=wspace)
+
+    if fname is not None:
+        fig.savefig(fname, dpi=300, bbox_inches="tight")
+
+    if show:
+        plt.show()
+
+    return fig, (ax_gqs, ax_rho), rho, r, im
 
 
