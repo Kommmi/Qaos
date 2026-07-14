@@ -42,6 +42,7 @@ def dominant_period_cepstrum(x, min_period=2, max_period=None, demean=True, detr
     -------
     period : int or None
         Estimated period in samples.
+        
     quefrency : ndarray
     cep : ndarray
     """
@@ -226,7 +227,7 @@ def period_statistics_summary(x, min_period=10, max_period=100):
         raise ValueError("No dominant period detected.")
 
     # --- Period-based quantities ---
-    avg_T, per_period_avgs = average_per_period(x, period)
+    avg_T, per_period_avgs = average_per_period(x, period)           
     var_T, vars_per_period = period_averaged_variance(x, period)
     asymmetry,rPlus,rMinus = directional_asymmetry(x, period)
 
