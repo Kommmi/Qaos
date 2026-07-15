@@ -5,7 +5,6 @@ from matplotlib.gridspec import GridSpec
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
 from matplotlib.animation import FuncAnimation, PillowWriter
-from cmap import Colormap
 from matplotlib.colors import LinearSegmentedColormap
 import ot
 from .states import Initial_state
