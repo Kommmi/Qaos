@@ -25,7 +25,7 @@ from .stats import preprocess_series, dominant_period_cepstrum,split_into_period
 from .stats import period_averaged_variance, directional_increment_rates_per_period, directional_asymmetry
 from .stats import period_statistics_summary
 
-def Compare_distances_QKT(U,Psi_0,Psi_p,d_hilbert=2,n_chain=3,system_site=0,N_kicks=200,renormalize=False,show_plt=False):
+def Compare_distances_All(U,Psi_0,Psi_p,d_hilbert=2,n_chain=3,system_site=0,N_kicks=200,renormalize=False,show_plt=False):
     """returns the Earth Mover's Distance between perturbed and unperturbed distribution
          as a function of time for a single iteration
 
@@ -154,7 +154,7 @@ def LLE_ln_avg_distance_separation(D_t_arr,traj_len):
     return ln_avg_dist
 
 
-def Single_its_QKT_GQS(U,Psi_0,Psi_p,d_hilbert,n_chain,system_site,N_kicks,renormalize=False):
+def Single_its_GQS(U,Psi_0,Psi_p,d_hilbert,n_chain,system_site,N_kicks,renormalize=False):
     """returns the Earth Mover's Distance between perturbed and unperturbed distribution
          as a function of time for a single iteration
 
@@ -259,7 +259,7 @@ def Gamma_calculator(U_F,dhilbert=2,nqubit=3,system_site=0,theta0=np.pi/2,phi0=n
             #print("Warning: Perturbation did not change the state. Skipping this trajectory.")
             Psi_pert, _, _ = perturb_theta_phi_isotropic(nqubit, theta0, phi0, angle_sigma=eps)
         # Evolve and compute rates
-        dg,dl = Single_its_QKT_GQS(U_F,Psi_0,Psi_pert,dhilbert,nqubit,system_site=system_site,N_kicks=N_kicks)
+        dg,dl = Single_its_GQS(U_F,Psi_0,Psi_pert,dhilbert,nqubit,system_site=system_site,N_kicks=N_kicks)
         D_Global[avg,:] = dg
         D_local_GQS[avg,:] = dl
     # Compute average rates
