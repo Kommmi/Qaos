@@ -389,7 +389,7 @@ def _geodesic_cost_matrix_from_xyz(xyz, p=2, eps=1e-12):
         return D
     return np.power(np.maximum(D, eps), p)
 
-def SSCI_calculate(
+def state_space_coverage_index(
     nu_mass,                 # (ntraj, n_theta, n_phi) probability masses, sums to 1
     theta_edges,
     phi_edges,
@@ -657,7 +657,7 @@ def plot_gqs_mass_mollweide(
     plt.tight_layout()
     plt.show()
 
-def state_space_coverage_index(kappa=0.5,
+def SSCI_calculator(kappa=0.5,
     tau=1.0,
     nqubit=3,
     site=0,
@@ -711,7 +711,7 @@ def state_space_coverage_index(kappa=0.5,
     phi_edges = result["phi_edges"]
 
     # Compute SSCI
-    S,_,_,_ = SSCI_calculate(
+    S,_,_,_ = state_space_coverage_index(
         nu_mass=mass,   
         theta_edges=theta_edges,
         phi_edges=phi_edges,
