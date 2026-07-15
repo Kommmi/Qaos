@@ -700,7 +700,7 @@ def state_space_coverage_index(kappa=0.5,
     phi_edges = result["phi_edges"]
 
     # Compute SSCI
-    S,_,_,_ = state_space_coverage_index(
+    S,_,_,_ = SSCI_calculate(
         nu_mass=mass,   
         theta_edges=theta_edges,
         phi_edges=phi_edges,
