@@ -299,4 +299,4 @@ def Gamma_calculator(U_F,dhilbert=2,nqubit=3,system_site=0,theta0=np.pi/2,phi0=n
         plt.grid(alpha=0.3)
         plt.tight_layout()
         plt.show()
-    return datal
+    return avg_T, datal
