@@ -212,7 +212,7 @@ def Single_its_QKT_GQS(U,Psi_0,Psi_p,d_hilbert,n_chain,system_site,N_kicks,renor
 
     return D_global, D_local_GQS
 
-def Avg_separation_QKT_GQS(U_F,dhilbert=2,nqubit=3,system_site=0,theta0=np.pi/2,phi0=np.pi/2,eps=0.2,N_traj=100,N_kicks=200,min_period=10,max_period=100,show_plot=False):
+def Gamma_calculator(U_F,dhilbert=2,nqubit=3,system_site=0,theta0=np.pi/2,phi0=np.pi/2,eps=0.2,N_traj=100,N_kicks=200,min_period=10,max_period=100,show_plot=False):
     """
     Compute the average separation rate of local Quantum EMD over N_traj perturbations.
 
