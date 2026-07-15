@@ -1,10 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib.gridspec import GridSpec
-import matplotlib.cm as cm
-import matplotlib.colors as mcolors
-from matplotlib.animation import FuncAnimation, PillowWriter
 from matplotlib.colors import LinearSegmentedColormap
 import ot
 from .states import Initial_state
@@ -601,19 +596,34 @@ def plot_gqs_mass_mollweide(
     traj_index : int
         Which trajectory to plot
     """
-
     # Select trajectory
-    M = mass[traj_index]
+    # --------------------------------------------------
+    M = np.asarray(mass[traj_index]).copy()
 
+    # --------------------------------------------------
     # Bin centers
+    # --------------------------------------------------
     theta_c = 0.5 * (theta_edges[:-1] + theta_edges[1:])
-    phi_c   = 0.5 * (phi_edges[:-1]   + phi_edges[1:])
-    TH, PH = np.meshgrid(theta_c, phi_c, indexing="ij")
+    phi_c = 0.5 * (phi_edges[:-1] + phi_edges[1:])
 
-    # Convert to Mollweide coordinates
-    # longitude = phi - π
-    lon = PH - np.pi
-    lat = np.pi/2 - TH
+    # Mollweide latitude:
+    lat_c = np.pi / 2 - theta_c
+
+    # --------------------------------------------------
+    # Convert longitude to [-pi, pi)
+    # --------------------------------------------------
+    if np.min(phi_edges) >= -1e-12 and np.max(phi_edges) > np.pi:
+        lon_c = (phi_c + np.pi) % (2 * np.pi) - np.pi
+        phi_order = np.argsort(lon_c)
+        lon_c = lon_c[phi_order]
+        M = M[:, phi_order]
+
+    else:
+        # phi is already stored in [-pi, pi].
+        lon_c = phi_c
+
+    # Grid shape: (n_theta, n_phi)
+    LON, LAT = np.meshgrid(lon_c, lat_c, indexing="xy")
 
     fig = plt.figure(figsize=(5,4))
     ax = fig.add_subplot(111, projection="mollweide")
@@ -621,8 +631,8 @@ def plot_gqs_mass_mollweide(
     M_masked = np.ma.masked_where(M < 1e-12, M)  # Mask near-zero bins
 
     im = ax.pcolormesh(
-        lon,
-        lat,
+        LON,
+        LAT,
         M_masked,
         shading="auto",
         cmap=cmap,
@@ -640,6 +650,8 @@ def plot_gqs_mass_mollweide(
     ax.set_yticklabels([" ", " ", "-45°", " ", " ", "0°", " ", " ", "45°", " ", " "],fontsize=10)
 
     cbar = plt.colorbar(im, ax=ax, pad=0.08, orientation="horizontal", shrink=0.8)
+    vmin, vmax = im.get_clim()
+    cbar.set_ticks(np.linspace(vmin, vmax, 3))
     cbar.set_label("Aggregated GQS Mass")
 
     plt.tight_layout()
