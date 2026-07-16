@@ -329,7 +329,7 @@ def plot_density_matrix_from_gqs(
     bottom_text="Ensembles of particles\nAny length vectors",
     rhoS_label=None,
     rhoS_label_pos=(0.5, -0.1,0),
-    arrow_color="#756ef9",
+    arrow_color="#b30000",
     sphere_alpha=0.10,
     elev=20,
     azim=-35
