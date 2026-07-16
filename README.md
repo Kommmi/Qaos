@@ -54,8 +54,9 @@ Distances between these ensembles are computed using **Wasserstein (optimal tran
 
 This framework introduces two complementary diagnostics:
 
-• **Distinguishability Growth Measure (Γ)** - Measures the average exponential growth of distances between nearby GQS ensembles similar to Maximal Lyapnov exponent
-• ** State-Space Coverage Index (SSCI)** - Measures how widely the subsystem explores its state space over time. 
+• **Distinguishability Measure (Γ)** - Measures the average exponential growth of distances between nearby GQS ensembles similar to Maximal Lyapunov exponent
+
+•  **State-Space Coverage Index (SSCI)** - Measures how widely the subsystem explores its state space over time. 
 
 Together, these define a **two-dimensional characterization of complexity**:
 
