@@ -60,9 +60,9 @@ The corresponding geometric quantum state is the probability measure
 $$ Q^S(Z,t)=
 \sum_{j=1}^{d_E}
 \lambda_j^E(t)
-\delta\!\left(Z-\mathbf{Z}_j^S(t)\right)
+\delta\left(Z-\mathbf{Z}_j^S(t)\right)
 \in
-\mathcal{P}\!\left(\mathbb{C}P^{d_S-1}\right),
+\mathcal{P}\left(\mathbb{C}P^{d_S-1}\right),
 $$
 
 where $\mathbf{Z}_j^S(t)$ is the point in projective Hilbert space associated with the conditional pure state $|\chi_j^S(t)\rangle$.
