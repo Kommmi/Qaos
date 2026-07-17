@@ -14,7 +14,7 @@ Consider a quantum system $S$ coupled to an environment $E$. The global state ca
 
 $$|\Psi_{SE}(t)\rangle =\sum_{k=1}^{d_S}\sum_{j=1}^{d_E}\psi_{kj}(t) |s_k\rangle \otimes |e_j\rangle$$
 
-Conditioning on the environment basis \(\{|e_j\rangle\}\) gives the decomposition
+Conditioning on the environment basis $\{|e_j\rangle\}$ gives the decomposition
 
 $$|\Psi_{SE}(t)\rangle=\sum_{j=1}^{d_E}
 \sqrt{\lambda_j^E(t)}
@@ -28,7 +28,7 @@ $$ \lambda_j^E(t) =
 |\psi_{kj}(t)|^2
 $$
 
-and, for \(\lambda_j^E(t)>0\),
+and, for $\lambda_j^E(t)>0$,
 
 $$|\chi_j^S(t)\rangle=
 \frac{1}{\sqrt{\lambda_j^E(t)}}
@@ -65,7 +65,7 @@ $$ Q^S(Z,t)=
 \mathcal{P}\!\left(\mathbb{C}P^{d_S-1}\right),
 $$
 
-where \(\mathbf{Z}_j^S(t)\) is the point in projective Hilbert space associated with the conditional pure state \(|\chi_j^S(t)\rangle\).
+where $\mathbf{Z}_j^S(t)$ is the point in projective Hilbert space associated with the conditional pure state $|\chi_j^S(t)\rangle$.
 
 A GQS:
 
@@ -105,13 +105,13 @@ Wasserstein geometry directly captures how environment-conditioned probability m
 
 The framework introduces two complementary diagnostics:
 
-- **Distinguishability measure \(\Gamma\):** quantifies the growth or decay of the Wasserstein distance between initially nearby GQS measures. It plays a role analogous to a finite-time Lyapunov-type sensitivity measure for probability distributions.
+- **Distinguishability measure $\Gamma$:** quantifies the growth or decay of the Wasserstein distance between initially nearby GQS measures. It plays a role analogous to a finite-time Lyapunov-type sensitivity measure for probability distributions.
 
 - **State-Space Coverage Index (SSCI):** quantifies how broadly the subsystem explores projective Hilbert space over time.
 
 These diagnostics provide a two-dimensional characterization of subsystem dynamics by separating:
 
-1. **sensitivity to initial conditions**, measured by \(\Gamma\); and
+1. **sensitivity to initial conditions**, measured by $\Gamma$; and
 2. **long-time state-space exploration**, measured by the SSCI.
 
 ---
@@ -125,7 +125,7 @@ These diagnostics provide a two-dimensional characterization of subsystem dynami
 5. Represent the subsystem dynamics as GQS probability measures.
 6. Compute Wasserstein distances between the reference and perturbed GQSs.
 7. Estimate:
-   - \(\Gamma\), describing sensitivity to perturbations;
+   - $\Gamma$, describing sensitivity to perturbations;
    - the SSCI, describing state-space exploration.
 
 ---
@@ -138,9 +138,9 @@ This repository provides tools for:
 - visualizing local subsystem dynamics on projective Hilbert space;
 - comparing GQS-based and density-matrix-based descriptions;
 - studying the dependence of subsystem dynamics on:
-  - interaction strength \(\kappa\);
-  - initial-state coordinates \((\theta,\phi)\);
-  - environment size \(L_E\);
+  - interaction strength $\kappa$;
+  - initial-state coordinates $(\theta,\phi)$;
+  - environment size $L_E$;
   - integer- and half-integer-spin system sizes.
 
 ![GQS dynamics for increasing odd system sizes](imagesREADME/three_LE_gqs_odd.gif)
