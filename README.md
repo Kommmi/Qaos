@@ -10,41 +10,27 @@ The framework extends the classical ideas of **sensitivity to initial conditions
 
 ## 🧠 Why Geometric Quantum States? — Notebook 1
 
-Consider a quantum system \(S\) coupled to an environment \(E\). The global state can be written as
+Consider a quantum system $S$ coupled to an environment $E$. The global state can be written as
 
-$$
-|\Psi_{SE}(t)\rangle
-=
-\sum_{k=1}^{d_S}
-\sum_{j=1}^{d_E}
-\psi_{kj}(t)
-|s_k\rangle \otimes |e_j\rangle .
-$$
+$$|\Psi_{SE}(t)\rangle =\sum_{k=1}^{d_S}\sum_{j=1}^{d_E}\psi_{kj}(t) |s_k\rangle \otimes |e_j\rangle$$
 
 Conditioning on the environment basis \(\{|e_j\rangle\}\) gives the decomposition
 
-$$
-|\Psi_{SE}(t)\rangle
-=
-\sum_{j=1}^{d_E}
+$$|\Psi_{SE}(t)\rangle=\sum_{j=1}^{d_E}
 \sqrt{\lambda_j^E(t)}
 \,|\chi_j^S(t)\rangle |e_j\rangle ,
 $$
 
 where
 
-$$
-\lambda_j^E(t)
-=
+$$ \lambda_j^E(t) =
 \sum_{k=1}^{d_S}
 |\psi_{kj}(t)|^2
 $$
 
 and, for \(\lambda_j^E(t)>0\),
 
-$$
-|\chi_j^S(t)\rangle
-=
+$$|\chi_j^S(t)\rangle=
 \frac{1}{\sqrt{\lambda_j^E(t)}}
 \sum_{k=1}^{d_S}
 \psi_{kj}(t)|s_k\rangle .
@@ -54,9 +40,7 @@ $$
 
 The subsystem state is conventionally represented by the reduced density matrix
 
-$$
-\rho_S(t)
-=
+$$ \rho_S(t)=
 \sum_{j=1}^{d_E}
 \lambda_j^E(t)
 |\chi_j^S(t)\rangle
@@ -73,15 +57,13 @@ The reduced density matrix:
 
 The corresponding geometric quantum state is the probability measure
 
-\[
-Q^S(Z,t)
-=
+$$ Q^S(Z,t)=
 \sum_{j=1}^{d_E}
 \lambda_j^E(t)
 \delta\!\left(Z-\mathbf{Z}_j^S(t)\right)
 \in
 \mathcal{P}\!\left(\mathbb{C}P^{d_S-1}\right),
-\]
+$$
 
 where \(\mathbf{Z}_j^S(t)\) is the point in projective Hilbert space associated with the conditional pure state \(|\chi_j^S(t)\rangle\).
 
@@ -127,7 +109,7 @@ The framework introduces two complementary diagnostics:
 
 - **State-Space Coverage Index (SSCI):** quantifies how broadly the subsystem explores projective Hilbert space over time.
 
-Together, these diagnostics provide a two-dimensional characterization of subsystem dynamics by separating:
+These diagnostics provide a two-dimensional characterization of subsystem dynamics by separating:
 
 1. **sensitivity to initial conditions**, measured by \(\Gamma\); and
 2. **long-time state-space exploration**, measured by the SSCI.
