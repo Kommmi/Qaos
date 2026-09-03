@@ -736,7 +736,6 @@ def SSCI_calculator(kappa=0.5,
     
     return S
 
-
 def _gqs_histogram_sequence(
     chi_steps,
     lam_steps,
@@ -807,7 +806,7 @@ def _gqs_histogram_sequence(
 
 def gqs_coverage_from_global_states(
     psi_steps,
-    times=None,
+    timesteps=None,
     nqubit=None,
     site=0,
     dhilbert=2,
@@ -833,16 +832,22 @@ def gqs_coverage_from_global_states(
 
         nu_n^S = (1/(n+1)) sum_{k=0}^n Q_k^S.
 
-    The optional ``times`` array labels the samples and the returned coverage
-    values. It does not reweight the discrete-time average.
+    ``timesteps`` can be a positive integer sampling interval or an explicit
+    array of step indices. For example, with states from step 0 through 6000,
+    ``timesteps=100`` automatically evaluates coverage at steps
+    0, 100, ..., 6000. The measure returned at step ``n`` still contains every
+    GQS from step 0 through step ``n``.
 
     Parameters
     ----------
-    psi_steps : array_like, shape (n_times, dhilbert**nqubit)
-        Sequence of normalized or unnormalized global pure-state vectors.
+    psi_steps : array_like, shape (T+1, dhilbert**nqubit)
+        Complete sequence of normalized or unnormalized global pure-state
+        vectors at steps 0, 1, ..., T.
         A single state vector is also accepted and treated as one time point.
-    times : array_like, shape (n_times,), optional
-        Strictly increasing sample times. Defaults to ``arange(n_times)``.
+    timesteps : int or array_like of int, optional
+        If a positive integer, it is the interval between evaluated steps;
+        ``timesteps=100`` generates ``np.arange(0, T+1, 100)``. An explicit
+        array selects those step indices directly. Defaults to every step.
     nqubit : int, optional
         Number of sites. If omitted, it is inferred from the state dimension.
     site : int, default=0
@@ -870,21 +875,21 @@ def gqs_coverage_from_global_states(
     Returns
     -------
     result : dict
-        ``times`` : (n_times,) sample labels.
+        ``timesteps`` : selected integer steps.
         ``local_gqs`` : dictionary with ``states`` of shape
-        (n_times, dE, 2) and ``weights`` of shape (n_times, dE).
-        ``instantaneous_mass`` : discretized Q_k^S for every time.
-        ``aggregate_measure`` : discretized nu_n^S for every time.
+        (T+1, dE, 2) and ``weights`` of shape (T+1, dE).
+        ``instantaneous_mass`` : discretized Q_k^S for every step.
+        ``aggregate_measure`` : discretized nu_n^S at selected timesteps.
         ``aggregate_density`` : nu_n^S density per unit sphere area.
-        ``coverage_index`` : S_p(n) for every time.
+        ``coverage_index`` : S_p(n) at selected timesteps.
         ``wasserstein_to_uniform`` : W_p(nu_n^S, sigma).
         The dictionary also contains the bin edges and OT metadata.
 
     Examples
     --------
-    >>> result = gqs_coverage_from_global_states(psi_steps, times=t)
+    >>> result = gqs_coverage_from_global_states(psi_steps, timesteps=100)
     >>> result["coverage_index"].shape
-    (len(t),)
+    (61,)
     """
     if int(dhilbert) != 2:
         raise NotImplementedError(
@@ -922,16 +927,36 @@ def gqs_coverage_from_global_states(
                 f"nqubit={nqubit}; got {global_dim}."
             )
 
-    if times is None:
-        times = np.arange(n_times)
+    if timesteps is None:
+        timesteps = np.arange(n_times, dtype=int)
     else:
-        times = np.asarray(times, dtype=float)
-        if times.ndim != 1 or len(times) != n_times:
-            raise ValueError("times must be one-dimensional with len(psi_steps).")
-        if not np.all(np.isfinite(times)):
-            raise ValueError("times must contain only finite values.")
-        if np.any(np.diff(times) <= 0.0):
-            raise ValueError("times must be strictly increasing.")
+        timesteps_array = np.asarray(timesteps)
+        if timesteps_array.ndim == 0:
+            if (
+                np.issubdtype(timesteps_array.dtype, np.bool_)
+                or not np.issubdtype(timesteps_array.dtype, np.integer)
+            ):
+                raise ValueError(
+                    "A scalar timesteps value must be a positive integer interval."
+                )
+            timestep_interval = int(timesteps_array)
+            if timestep_interval <= 0:
+                raise ValueError("The timestep interval must be positive.")
+            timesteps = np.arange(0, n_times, timestep_interval, dtype=int)
+        elif timesteps_array.ndim != 1 or len(timesteps_array) == 0:
+            raise ValueError("timesteps must be a nonempty one-dimensional array.")
+        else:
+            if not np.all(np.isfinite(timesteps_array)):
+                raise ValueError("timesteps must contain only finite values.")
+            if not np.all(timesteps_array == np.floor(timesteps_array)):
+                raise ValueError("timesteps must contain integer step indices.")
+            timesteps = timesteps_array.astype(int)
+            if np.any(np.diff(timesteps) <= 0):
+                raise ValueError("timesteps must be strictly increasing.")
+            if timesteps[0] < 0 or timesteps[-1] >= n_times:
+                raise ValueError(
+                    f"timesteps must lie between 0 and {n_times - 1}."
+                )
 
     # Normalize each global state. This leaves already normalized inputs
     # unchanged and prevents their norms from altering the GQS probabilities.
@@ -967,9 +992,11 @@ def gqs_coverage_from_global_states(
         method=method,
     )
 
-    # nu_n is the equally weighted empirical average of Q_0, ..., Q_n.
-    counts = np.arange(1, n_times + 1, dtype=float)[:, None, None]
-    aggregate_measure = np.cumsum(instantaneous_mass, axis=0) / counts
+    # nu_n is the equally weighted empirical average of Q_0, ..., Q_n. Build
+    # the cumulative sum from every state, then retain only requested steps.
+    cumulative_mass = np.cumsum(instantaneous_mass, axis=0)
+    counts = (timesteps + 1).astype(float)[:, None, None]
+    aggregate_measure = cumulative_mass[timesteps] / counts
 
     bin_area = _sphere_bin_areas(theta_edges, phi_edges)
     aggregate_density = aggregate_measure / np.maximum(
@@ -991,7 +1018,7 @@ def gqs_coverage_from_global_states(
     )
 
     return {
-        "times": times,
+        "timesteps": timesteps,
         "local_gqs": {
             "states": chi_steps,
             "weights": lam_steps,
@@ -1002,7 +1029,7 @@ def gqs_coverage_from_global_states(
         "aggregate_measure": aggregate_measure,
         "aggregate_density": aggregate_density,
         "coverage_index": coverage,
-        "coverage_curve": np.column_stack((times, coverage)),
+        "coverage_curve": np.column_stack((timesteps, coverage)),
         "wasserstein_to_uniform": W_nu_sigma,
         "wasserstein_delta_to_uniform": W_delta,
         "theta_edges": theta_edges,
@@ -1013,8 +1040,8 @@ def gqs_coverage_from_global_states(
             "dhilbert": dhilbert,
             "environment_dimension": dhilbert ** (nqubit - 1),
             "aggregation": "equal_sample_average",
+            "number_of_global_states": n_times,
             "binning_method": method,
             "ot": ot_meta,
         },
     }
-
