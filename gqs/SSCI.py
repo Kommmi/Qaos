@@ -735,3 +735,286 @@ def SSCI_calculator(kappa=0.5,
             title=f"State space coverage Index: {S[0]:.2f}",) 
     
     return S
+
+
+def _gqs_histogram_sequence(
+    chi_steps,
+    lam_steps,
+    n_theta=30,
+    n_phi=30,
+    method="equal_area",
+):
+    """Discretize each instantaneous single-qubit GQS on the Bloch sphere."""
+    chi_steps = np.asarray(chi_steps, dtype=complex)
+    lam_steps = np.asarray(lam_steps, dtype=float)
+
+    if chi_steps.ndim != 3 or chi_steps.shape[-1] != 2:
+        raise ValueError("chi_steps must have shape (n_times, dE, 2).")
+    if lam_steps.shape != chi_steps.shape[:-1]:
+        raise ValueError(
+            "lam_steps must have shape (n_times, dE), matching chi_steps."
+        )
+    if n_theta < 1 or n_phi < 1:
+        raise ValueError("n_theta and n_phi must be positive integers.")
+
+    # Bloch coordinates of every conditional local pure state.
+    a = chi_steps[..., 0]
+    b = chi_steps[..., 1]
+    x = 2.0 * np.real(np.conj(a) * b)
+    y = 2.0 * np.imag(np.conj(a) * b)
+    z = np.real(np.abs(a) ** 2 - np.abs(b) ** 2)
+    theta = np.arccos(np.clip(z, -1.0, 1.0))
+    phi = np.mod(np.arctan2(y, x), 2.0 * np.pi)
+
+    n_times = chi_steps.shape[0]
+    phi_edges = np.linspace(0.0, 2.0 * np.pi, n_phi + 1)
+    instantaneous_mass = np.zeros((n_times, n_theta, n_phi), dtype=float)
+
+    if method == "equal_area":
+        # Histogramming uses increasing u=cos(theta) edges (south to north).
+        # Reverse the histogram rows so that they match increasing theta edges
+        # (north to south), as expected by the spherical geometry utilities.
+        u_edges = np.linspace(-1.0, 1.0, n_theta + 1)
+        theta_edges = np.arccos(np.linspace(1.0, -1.0, n_theta + 1))
+        for k in range(n_times):
+            H, _, _ = np.histogram2d(
+                z[k],
+                phi[k],
+                bins=[u_edges, phi_edges],
+                weights=lam_steps[k],
+            )
+            instantaneous_mass[k] = H[::-1, :]
+    elif method == "sin_weighted":
+        theta_edges = np.linspace(0.0, np.pi, n_theta + 1)
+        for k in range(n_times):
+            H, _, _ = np.histogram2d(
+                theta[k],
+                phi[k],
+                bins=[theta_edges, phi_edges],
+                weights=lam_steps[k],
+            )
+            instantaneous_mass[k] = H
+    else:
+        raise ValueError("method must be 'equal_area' or 'sin_weighted'.")
+
+    totals = instantaneous_mass.sum(axis=(1, 2), keepdims=True)
+    if np.any(totals <= 0.0):
+        raise ValueError("At least one instantaneous GQS has zero total weight.")
+    instantaneous_mass /= totals
+
+    return instantaneous_mass, theta_edges, phi_edges
+
+
+def gqs_coverage_from_global_states(
+    psi_steps,
+    times=None,
+    nqubit=None,
+    site=0,
+    dhilbert=2,
+    n_theta=30,
+    n_phi=30,
+    p=1,
+    method="equal_area",
+    sigma_mode=None,
+    Z0_xyz=(0.0, 0.0, 1.0),
+    ot_method="emd",
+    sinkhorn_reg=1e-2,
+    eps=1e-12,
+):
+    r"""
+    Compute local GQSs, cumulative aggregate measures, and coverage over time.
+
+    For global pure states ``psi_steps = [Psi_0, ..., Psi_T]``, this function
+    constructs the computational-environment-basis GQS at every time,
+
+        Q_k^S = sum_j lambda_j(k) delta_{chi_j(k)},
+
+    and the cumulative aggregate measure
+
+        nu_n^S = (1/(n+1)) sum_{k=0}^n Q_k^S.
+
+    The optional ``times`` array labels the samples and the returned coverage
+    values. It does not reweight the discrete-time average.
+
+    Parameters
+    ----------
+    psi_steps : array_like, shape (n_times, dhilbert**nqubit)
+        Sequence of normalized or unnormalized global pure-state vectors.
+        A single state vector is also accepted and treated as one time point.
+    times : array_like, shape (n_times,), optional
+        Strictly increasing sample times. Defaults to ``arange(n_times)``.
+    nqubit : int, optional
+        Number of sites. If omitted, it is inferred from the state dimension.
+    site : int, default=0
+        Single site retained as the subsystem.
+    dhilbert : int, default=2
+        Local Hilbert-space dimension. Coverage currently requires qubits.
+    n_theta, n_phi : int, default=30
+        Bloch-sphere histogram resolution.
+    p : float, default=1
+        Wasserstein order used in the coverage index.
+    method : {"equal_area", "sin_weighted"}
+        Bloch-sphere binning convention.
+    sigma_mode : {"uniform_bins", "area"}, optional
+        Reference discretization for the uniform sphere measure. By default,
+        it is selected consistently with ``method``.
+    Z0_xyz : array_like, default=(0, 0, 1)
+        Reference Dirac point used to normalize the coverage index.
+    ot_method : {"emd", "sinkhorn"}, default="emd"
+        Optimal-transport solver.
+    sinkhorn_reg : float, default=1e-2
+        Entropic regularization when ``ot_method="sinkhorn"``.
+    eps : float, default=1e-12
+        Numerical cutoff for zero-norm states and zero GQS weights.
+
+    Returns
+    -------
+    result : dict
+        ``times`` : (n_times,) sample labels.
+        ``local_gqs`` : dictionary with ``states`` of shape
+        (n_times, dE, 2) and ``weights`` of shape (n_times, dE).
+        ``instantaneous_mass`` : discretized Q_k^S for every time.
+        ``aggregate_measure`` : discretized nu_n^S for every time.
+        ``aggregate_density`` : nu_n^S density per unit sphere area.
+        ``coverage_index`` : S_p(n) for every time.
+        ``wasserstein_to_uniform`` : W_p(nu_n^S, sigma).
+        The dictionary also contains the bin edges and OT metadata.
+
+    Examples
+    --------
+    >>> result = gqs_coverage_from_global_states(psi_steps, times=t)
+    >>> result["coverage_index"].shape
+    (len(t),)
+    """
+    if int(dhilbert) != 2:
+        raise NotImplementedError(
+            "Bloch-sphere coverage is currently implemented only for "
+            "single-qubit subsystems (dhilbert=2)."
+        )
+    dhilbert = int(dhilbert)
+
+    psi_steps = np.asarray(psi_steps, dtype=complex)
+    if psi_steps.ndim == 1:
+        psi_steps = psi_steps[None, :]
+    if psi_steps.ndim != 2:
+        raise ValueError(
+            "psi_steps must have shape (n_times, global_dimension)."
+        )
+
+    n_times, global_dim = psi_steps.shape
+    if n_times == 0 or global_dim == 0:
+        raise ValueError("psi_steps cannot be empty.")
+
+    if nqubit is None:
+        inferred = int(round(np.log(global_dim) / np.log(dhilbert)))
+        if inferred < 1 or dhilbert ** inferred != global_dim:
+            raise ValueError(
+                "Cannot infer nqubit: the global state dimension must be an "
+                "exact power of dhilbert."
+            )
+        nqubit = inferred
+    else:
+        nqubit = int(nqubit)
+        expected_dim = dhilbert ** nqubit
+        if global_dim != expected_dim:
+            raise ValueError(
+                f"Expected global dimension {expected_dim} for "
+                f"nqubit={nqubit}; got {global_dim}."
+            )
+
+    if times is None:
+        times = np.arange(n_times)
+    else:
+        times = np.asarray(times, dtype=float)
+        if times.ndim != 1 or len(times) != n_times:
+            raise ValueError("times must be one-dimensional with len(psi_steps).")
+        if not np.all(np.isfinite(times)):
+            raise ValueError("times must contain only finite values.")
+        if np.any(np.diff(times) <= 0.0):
+            raise ValueError("times must be strictly increasing.")
+
+    # Normalize each global state. This leaves already normalized inputs
+    # unchanged and prevents their norms from altering the GQS probabilities.
+    norms = np.linalg.norm(psi_steps, axis=1)
+    if np.any(norms <= eps):
+        bad = np.flatnonzero(norms <= eps)
+        raise ValueError(f"Zero-norm global state(s) at indices {bad.tolist()}.")
+    psi_steps = psi_steps / norms[:, None]
+
+    # Reduced_state_single_site_batch expects states in columns; here each
+    # time sample is treated as one batch member.
+    chi_steps, lam_steps = Reduced_state_single_site_batch(
+        dhilbert,
+        nqubit,
+        site,
+        psi_steps.T,
+        eps=eps,
+    )
+    lam_steps = np.where(lam_steps > eps, lam_steps, 0.0)
+    lam_totals = lam_steps.sum(axis=1, keepdims=True)
+    lam_steps = np.divide(
+        lam_steps,
+        lam_totals,
+        out=np.zeros_like(lam_steps),
+        where=(lam_totals > 0.0),
+    )
+
+    instantaneous_mass, theta_edges, phi_edges = _gqs_histogram_sequence(
+        chi_steps,
+        lam_steps,
+        n_theta=n_theta,
+        n_phi=n_phi,
+        method=method,
+    )
+
+    # nu_n is the equally weighted empirical average of Q_0, ..., Q_n.
+    counts = np.arange(1, n_times + 1, dtype=float)[:, None, None]
+    aggregate_measure = np.cumsum(instantaneous_mass, axis=0) / counts
+
+    bin_area = _sphere_bin_areas(theta_edges, phi_edges)
+    aggregate_density = aggregate_measure / np.maximum(
+        bin_area[None, :, :], eps
+    )
+
+    if sigma_mode is None:
+        sigma_mode = "uniform_bins" if method == "equal_area" else "area"
+
+    coverage, W_nu_sigma, W_delta, ot_meta = state_space_coverage_index(
+        nu_mass=aggregate_measure,
+        theta_edges=theta_edges,
+        phi_edges=phi_edges,
+        p=p,
+        Z0_xyz=Z0_xyz,
+        sigma_mode=sigma_mode,
+        ot_method=ot_method,
+        sinkhorn_reg=sinkhorn_reg,
+    )
+
+    return {
+        "times": times,
+        "local_gqs": {
+            "states": chi_steps,
+            "weights": lam_steps,
+        },
+        "chi_steps": chi_steps,
+        "lam_steps": lam_steps,
+        "instantaneous_mass": instantaneous_mass,
+        "aggregate_measure": aggregate_measure,
+        "aggregate_density": aggregate_density,
+        "coverage_index": coverage,
+        "coverage_curve": np.column_stack((times, coverage)),
+        "wasserstein_to_uniform": W_nu_sigma,
+        "wasserstein_delta_to_uniform": W_delta,
+        "theta_edges": theta_edges,
+        "phi_edges": phi_edges,
+        "meta": {
+            "nqubit": nqubit,
+            "site": site,
+            "dhilbert": dhilbert,
+            "environment_dimension": dhilbert ** (nqubit - 1),
+            "aggregation": "equal_sample_average",
+            "binning_method": method,
+            "ot": ot_meta,
+        },
+    }
+
