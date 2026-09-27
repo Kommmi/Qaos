@@ -75,6 +75,10 @@ A GQS:
 
 > **Basis dependence:** The environment-conditioned GQS depends on the chosen environment basis. The calculations in this repository use conditioning in the computational basis.
 
+### Geometric quantum state - Measurement Protocol
+The GQS can be reconstructed experimentally by combining measurements of the environment with conditional state tomography of the system.
+![Classical and quantum kicked-top dynamics](imagesREADME/GQSCircuit.jpg)
+
 ---
 
 ## 📐 Distance Measures — Notebook 2
