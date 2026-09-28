@@ -18,23 +18,14 @@ Conditioning on the environment basis $\{|e_j\rangle\}$ gives the decomposition
 
 $$|\Psi_{SE}(t)\rangle=\sum_{j=1}^{d_E}
 \sqrt{\lambda_j^E(t)}
-\,|\chi_j^S(t)\rangle |e_j\rangle ,
-$$
-
-where
-
-$$ \lambda_j^E(t) =
+\,|\chi_j^S(t)\rangle |e_j\rangle , \qquad \text{where} \lambda_j^E(t) =
 \sum_{k=1}^{d_S}
-|\psi_{kj}(t)|^2
-$$
-
-and, for $\lambda_j^E(t)>0$,
-
-$$|\chi_j^S(t)\rangle=
+|\psi_{kj}(t)|^2 , \qquad \text{and, for $\lambda_j^E(t)>0$,} |\chi_j^S(t)\rangle=
 \frac{1}{\sqrt{\lambda_j^E(t)}}
 \sum_{k=1}^{d_S}
 \psi_{kj}(t)|s_k\rangle .
 $$
+
 
 ### Reduced density matrix
 
