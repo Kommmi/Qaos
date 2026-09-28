@@ -26,43 +26,15 @@ $$|\Psi_{SE}(t)\rangle=\sum_{j=1}^{d_E}
 \psi_{kj}(t)|s_k\rangle .
 $$
 
+For a joint pure state of a system $S$ and environment $E$, measuring the environment in a fixed basis yields conditional system states $|\chi_j^S(t)\rangle$ with probabilities $\lambda_j^E(t)$. These define two representations:
 
-### Reduced density matrix
-
-The subsystem state is conventionally represented by the reduced density matrix
-
-$$ \rho_S(t)=
-\sum_{j=1}^{d_E}
-\lambda_j^E(t)
-|\chi_j^S(t)\rangle
-\langle\chi_j^S(t)| .
+$$
+\rho_S(t)=\sum_j \lambda_j^E(t)|\chi_j^S(t)\rangle\langle\chi_j^S(t)|,
+\qquad
+Q^S(Z,t)=\sum_j \lambda_j^E(t)\delta\left(Z-\mathbf{Z}_j^S(t)\right).
 $$
 
-The reduced density matrix:
-
-- reproduces all observable statistics of the subsystem;
-- encodes the underlying ensemble structure only implicitly;
-- does not distinguish between different pure-state ensembles that produce the same density matrix.
-
-### Geometric quantum state
-
-The corresponding geometric quantum state is the probability measure
-
-$$ Q^S(Z,t)=
-\sum_{j=1}^{d_E}
-\lambda_j^E(t)
-\delta\left(Z-\mathbf{Z}_j^S(t)\right)
-\in
-\mathcal{P}\left(\mathbb{C}P^{d_S-1}\right),
-$$
-
-where $\mathbf{Z}_j^S(t)$ is the point in projective Hilbert space associated with the conditional pure state $|\chi_j^S(t)\rangle$.
-
-A GQS:
-
-- retains the full distribution of conditional pure states on projective Hilbert space;
-- distinguishes geometrically different ensembles that correspond to the same density matrix;
-- provides a natural setting for comparing subsystem states using optimal transport.
+The reduced density matrix reproduces all subsystem observable statistics. The geometric quantum state (GQS) retains the distribution of conditional pure states, distinguishing ensembles with identical density matrices and enabling comparisons through optimal transport. Here, $\mathbf{Z}_j^S(t)$ represents $|\chi_j^S(t)\rangle$ in projective Hilbert space.
 
 > **Basis dependence:** The environment-conditioned GQS depends on the chosen environment basis. The calculations in this repository use conditioning in the computational basis.
 
