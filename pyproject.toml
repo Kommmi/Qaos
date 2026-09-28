@@ -18,9 +18,12 @@ dependencies = [
   "matplotlib",
   "tqdm",
   "POT",
+  "pandas",
+  "plotly",
 ]
 
 [project.optional-dependencies]
+qiskit = ["qiskit", "qiskit-aer", "pylatexenc"]
 dev = [
   "pytest",
   "pytest-cov",
