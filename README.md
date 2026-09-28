@@ -123,6 +123,7 @@ These diagnostics provide a two-dimensional characterization of subsystem dynami
 
 ![Quantum Algorithm for Local Quantum Dynamics](imagesREADME/QAlgo.jpg)
 This notebook presents a hybrid quantum–classical workflow for studying local quantum dynamics through geometric quantum states (GQS). Starting from a Hamiltonian $H$, initial state $|\psi_0\rangle$, and evolution time $t$, a Trotter circuit approximates the joint evolution. Environment measurements and conditional subsystem tomography provide the data for reconstructing the local ensemble.
+![Quantum Algorithm for Local Quantum Dynamics](imagesREADME/QKT_GQS_Q3.gif)
 
 ---
 
