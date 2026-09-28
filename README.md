@@ -8,7 +8,7 @@ The framework extends the classical ideas of **sensitivity to initial conditions
 
 ---
 
-## 🧠 Why Geometric Quantum States? — Notebook 1
+##  Why Geometric Quantum States? — Notebook 1
 
 Consider a quantum system $S$ coupled to an environment $E$. The global state can be written as
 
@@ -117,6 +117,11 @@ These diagnostics provide a two-dimensional characterization of subsystem dynami
 
 1. **sensitivity to initial conditions**, measured by $\Gamma$; and
 2. **long-time state-space exploration**, measured by the SSCI.
+
+---
+##  Quantum Algorithm for Local Quantum Dynamics - Notebook-5
+
+
 
 ---
 
