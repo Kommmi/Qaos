@@ -1,32 +1,11 @@
-# Dynamical Complexity of Projected Ensembles: A Geometric Quantum State Approach
-
-Code and data for the paper **"Dynamical Complexity of Projected Ensembles: A Geometric Quantum State Approach"** by Komal Sah, Fabio Anza, Alexandra M. Jurgens, and James P. Crutchfield.
-
-🌐 **Academic website:** [kommmi.github.io](https://kommmi.github.io/)
-📄 **Paper:** arXiv link coming soon
-
-![Classical and quantum kicked-top dynamics](imagesREADME/CKT_QKT.jpg)
+# Dynamical Complexity of Projected Ensembles 
+🌐 **Simulation:** [kommmi.github.io](https://kommmi.github.io/)
+📄 **Paper:** https://arxiv.org/abs/2608.09705
 
 ## Overview
 
-This repository implements a **state-based geometric framework** for quantifying dynamical complexity in finite interacting quantum systems as they move from closed, coherent evolution to interacting, effectively open behavior.
-
-A subsystem's reduced dynamics is represented as a probability measure on complex projective Hilbert space $\mathbb{CP}^{d_S-1}$, called a **geometric quantum state (GQS)**. Obtained by conditioning on the environment in a fixed basis, the GQS coincides with the **projected ensemble** that underlies deep thermalization and emergent quantum state designs.
-
-Work on projected ensembles has mostly asked whether, and how fast, the ensemble approaches a universal (Haar) limit. This repository asks a complementary question about its **dynamical structure**:
-
-- How **sensitively** does the ensemble respond to small perturbations of the initial state?
-- How **extensively** does it explore state space over time?
-
-These are answered with two diagnostics, inspired by the maximal Lyapunov exponent and the information dimension of classical dynamics, and applied to the **quantum kicked top**.
-
-**Main results**
-
-- Both diagnostics generally increase with interaction strength $\kappa$, which drives the transition from periodic to complex subsystem dynamics.
-- Their dependence on environment size is structured by **parity symmetry**: integer-spin (even- $L$ ) systems often show greater sensitivity and state-space coverage than half-integer-spin (odd- $L$ ) systems. This is a finite-size quantum effect.
-- The two diagnostics carry distinct information: at weak interaction, larger environments raise sensitivity without a matching increase in exploration.
-
----
+When a quantum subsystem interacts with its environment, measuring the environment leaves the subsystem in a collection of pure states called a projected ensemble. This repository provides tools to measure how sensitive that ensemble is to small changes in the initial state, and how much of state space it explores over time.
+![Classical and quantum kicked-top dynamics](imagesREADME/CKT_QKT.jpg)
 
 ## Contents
 
