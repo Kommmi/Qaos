@@ -209,10 +209,12 @@ def sample_projected_ensemble(mps: MPS, subsystem, M: int, seed=None):
     chi : ndarray, shape (M, 2^k), complex
         Normalized conditional states |psi_z> of the subsystem (one row per sample).
     p : ndarray, shape (M,)
-        Exact Born probability p_z of each sampled outcome.
-    z_index : ndarray, shape (M,), int
-        Outcome index in the same convention as ``gqs.states.Reduced_state_single_site``
-        (measured sites in increasing order, first site = most significant bit).
+        Exact Born probability p_z of each sampled outcome (can underflow to 0
+        for very large n; it is a product of n - k conditional probabilities).
+    bits : ndarray, shape (M, n - k), uint8
+        Measured outcome bits, one column per measured site in increasing site order.
+        Use ``outcome_index(bits)`` to get the integer index used by
+        ``gqs.states.Reduced_state_single_site`` (only for n - k <= 62).
     """
     if np.isscalar(subsystem):
         subsystem = [int(subsystem)]
@@ -225,7 +227,7 @@ def sample_projected_ensemble(mps: MPS, subsystem, M: int, seed=None):
     mps.move_center(0)
     L = np.ones((M, 1, 1), dtype=complex)        # (samples, subsystem rows, bond)
     p = np.ones(M)
-    z_index = np.zeros(M, dtype=np.int64)
+    bits = []
 
     for j, T in enumerate(mps.tensors):          # T has shape (l, 2, r)
         if j in keep:
@@ -241,11 +243,25 @@ def sample_projected_ensemble(mps: MPS, subsystem, M: int, seed=None):
         nz = np.where(z, n1, n0)
         p *= nz / tot
         L = np.where(z[:, None, None], L1, L0) / np.sqrt(nz)[:, None, None]
-        z_index = 2 * z_index + z
+        bits.append(z)
 
     chi = L[:, :, 0]
     chi /= np.linalg.norm(chi, axis=1, keepdims=True)
-    return chi, p, z_index
+    bits = np.column_stack(bits).astype(np.uint8) if bits else np.zeros((M, 0), np.uint8)
+    return chi, p, bits
+
+
+def outcome_index(bits: np.ndarray) -> np.ndarray:
+    """Integer index of each outcome (first measured site = most significant bit).
+
+    Matches the environment index of ``gqs.states.Reduced_state_single_site``.
+    Only valid for up to 62 measured qubits; beyond that the index overflows int64.
+    """
+    bits = np.asarray(bits)
+    if bits.shape[1] > 62:
+        raise ValueError("outcome_index overflows int64 beyond 62 measured qubits; use the bits directly")
+    weights = (1 << np.arange(bits.shape[1] - 1, -1, -1, dtype=np.int64))
+    return bits.astype(np.int64) @ weights
 
 
 def bloch_vectors(chi: np.ndarray) -> np.ndarray:
@@ -270,7 +286,8 @@ def fubini_study_matrix(chi_1: np.ndarray, chi_2: np.ndarray) -> np.ndarray:
     return np.arccos(np.clip(ov, 0.0, 1.0))
 
 
-def empirical_ensemble(chi: np.ndarray, z_index: np.ndarray):
-    """Merge repeated outcomes: returns unique conditional states and their frequencies."""
-    uniq, first, counts = np.unique(z_index, return_index=True, return_counts=True)
+def empirical_ensemble(chi: np.ndarray, bits: np.ndarray):
+    """Merge repeated outcomes: returns unique conditional states, their frequencies,
+    and the unique outcome bit strings."""
+    uniq, first, counts = np.unique(np.asarray(bits), axis=0, return_index=True, return_counts=True)
     return chi[first], counts / counts.sum(), uniq
